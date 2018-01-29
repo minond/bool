@@ -102,8 +102,21 @@ func repl() {
 		case "exit":
 			return
 
+		case "m":
+			fallthrough
 		case "mode":
 			fmt.Printf("  %s on\n", currMode)
+
+		case "k":
+			fallthrough
+		case "keyboard":
+			fmt.Println("")
+			fmt.Println("-----------------------------------")
+			fmt.Println("Operation | Character | Name")
+			fmt.Println("-----------------------------------")
+			fmt.Printf("%5s     | %5s     | Conjunction\n", string(andRn), string(andAsciiRn))
+			fmt.Printf("%5s     | %5s     | Disjunction\n", string(orRn), string(orAsciiRn))
+			fmt.Printf("%5s     | %5s     | Negation\n", string(notRn), string(notAsciiRn))
 
 		default:
 			input := strings.TrimSpace(text)
