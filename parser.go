@@ -54,11 +54,15 @@ func (b boolean) eval(env environment) boolean {
 	return b
 }
 
-// XXX
-func (e *environment) get(label string) {}
+func (e *environment) get(label string) (boolean, bool) {
+	val, ok := e.bindings[label]
+	return val, ok
+}
 
-// XXX
-func (e *environment) set(label string, value boolean) {}
+func (e *environment) set(label string, value boolean) boolean {
+	e.bindings[label] = value
+	return value
+}
 
 /*
 
