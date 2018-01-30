@@ -35,7 +35,6 @@ unary        = UNI_OPERATOR unary
 
 primary      = BOOLEAN
              | identifier
-             | "(" expression ")"
 
 */
 func parse(tokens []token) evaluates {
@@ -68,12 +67,23 @@ func (p *parser) binding() binding {
 	}
 }
 
-// TODO Keep checking for binary expression
 func (p *parser) expression() expression {
-	return p.unary()
+	expr := p.unary()
+
+	for p.match(andTok, orTok) {
+		lhs := expr
+		op := cloneToken(p.prev())
+		rhs := p.unary()
+
+		expr = expression{}
+		expr.lhs = &lhs
+		expr.op = &op
+		expr.rhs = &rhs
+	}
+
+	return expr
 }
 
-// TODO Get real unary expression
 func (p *parser) unary() expression {
 	expr := expression{}
 
@@ -94,13 +104,11 @@ func (p *parser) unary() expression {
 		} else {
 			expr.literal = &boolean{false}
 		}
+	} else if p.curr().id == eolTok {
+		expr.err = errors.New("Unexpected end of line.")
 	} else {
-		if p.curr().id == eolTok {
-			expr.err = errors.New("Unexpected end of line.")
-		} else {
-			expr.err = fmt.Errorf("Invalid expression starting in position %d with character `%s`.",
-				p.curr().pos, p.curr().lexeme)
-		}
+		expr.err = fmt.Errorf("Invalid expression starting in position %d with character `%s`.",
+			p.curr().pos, p.curr().lexeme)
 	}
 
 	return expr
