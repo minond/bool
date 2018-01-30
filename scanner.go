@@ -13,37 +13,51 @@ type token struct {
 }
 
 const (
-	errTok      tokenId = "err"
-	invldTok    tokenId = "invalid"
-	eolTok      tokenId = "eol"
 	andTok      tokenId = "and"
+	bindContTok tokenId = "where"
+	bindTok     tokenId = "is"
+	eolTok      tokenId = "eol"
+	eqTok       tokenId = "EQ"
+	errTok      tokenId = "err"
+	falseTok    tokenId = "false"
+	identTok    tokenId = "id"
+	invldTok    tokenId = "invalid"
+	miTok       tokenId = "matimp"
 	notTok      tokenId = "not"
 	orTok       tokenId = "or"
-	identTok    tokenId = "id"
-	bindTok     tokenId = "is"
-	bindContTok tokenId = "where"
-	falseTok    tokenId = "false"
 	trueTok     tokenId = "true"
+	xorTok      tokenId = "xor"
 
 	andAsciiRn = rune('^')
 	andRn      = rune('∧')
-	eqRn       = rune('=')
+	eqAsciiRn  = rune('=')
+	eqRn       = rune('≡')
+	miAsciiRn  = rune('>')
+	miRn       = rune('→')
 	nlRn       = rune('\n')
-	notRn      = rune('¬')
 	notAsciiRn = rune('!')
+	notRn      = rune('¬')
 	orAsciiRn  = rune('v')
 	orRn       = rune('∨')
 	spaceRn    = rune(' ')
+	xorAsciiRn = rune('*')
+	xorRn      = rune('⊕')
 )
 
 var (
 	tokenDict = map[rune]tokenId{
 		andAsciiRn: andTok,
 		andRn:      andTok,
-		notRn:      notTok,
+		eqAsciiRn:  eqTok,
+		eqRn:       eqTok,
+		miAsciiRn:  miTok,
+		miRn:       miTok,
 		notAsciiRn: notTok,
+		notRn:      notTok,
 		orAsciiRn:  orTok,
 		orRn:       orTok,
+		xorAsciiRn: xorTok,
+		xorRn:      xorTok,
 	}
 
 	keywordDict = map[string]tokenId{
@@ -77,8 +91,17 @@ func (t token) String() string {
 	case notTok:
 		str = "NOT"
 
+	case eqTok:
+		str = "EQ"
+
 	case orTok:
 		str = "OR"
+
+	case xorTok:
+		str = "XOR"
+
+	case miTok:
+		str = "MATERIAL-IMPLICATION"
 
 	case identTok:
 		str = fmt.Sprintf("ID(%s)", t.lexeme)
