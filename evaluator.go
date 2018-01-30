@@ -48,8 +48,28 @@ func (b expression) eval(env environment) (boolean, error) {
 	if b.err != nil {
 		return boolean{}, fmt.Errorf("Cannot evaluate expression due to error: %s", b.err)
 	} else if b.lhs != nil && b.op != nil && b.rhs != nil {
-		// TODO Finish eval path
-		return boolean{}, errors.New("Unimplemented evaluation path (lhs + op + rhs)")
+		lhs, err := b.lhs.eval(env)
+
+		if err != nil {
+			return boolean{}, err
+		}
+
+		rhs, err := b.rhs.eval(env)
+
+		if err != nil {
+			return boolean{}, err
+		}
+
+		switch b.op.id {
+		case andTok:
+			return boolean{lhs.internal && rhs.internal}, nil
+
+		case orTok:
+			return boolean{lhs.internal || rhs.internal}, nil
+
+		default:
+			return boolean{}, fmt.Errorf("Unknown unary operator: %s", b.op.lexeme)
+		}
 	} else if b.op != nil && b.rhs != nil {
 		val, err := b.rhs.eval(env)
 
