@@ -20,6 +20,8 @@ const (
 	orTok    tokenId = "or"
 	identTok tokenId = "id"
 	eqTok    tokenId = "eq"
+	falseTok tokenId = "false"
+	trueTok  tokenId = "true"
 
 	andAsciiRn = rune('^')
 	andRn      = rune('∧')
@@ -41,6 +43,13 @@ var (
 		notAsciiRn: notTok,
 		orAsciiRn:  orTok,
 		orRn:       orTok,
+	}
+
+	boolDict = map[string]tokenId{
+		"0":     falseTok,
+		"1":     trueTok,
+		"false": falseTok,
+		"true":  trueTok,
 	}
 )
 
@@ -69,6 +78,12 @@ func (t token) String() string {
 
 	case eqTok:
 		str = "EQ"
+
+	case falseTok:
+		str = "FALSE"
+
+	case trueTok:
+		str = "TRUE"
 	}
 
 	return fmt.Sprintf("%s", str)
@@ -96,14 +111,28 @@ func scan(raw string) []token {
 		if isWhitespace(r) {
 			continue
 		} else if isOp(r) {
-			add(getOpToke(r), string(r), nil)
+			add(getOpToken(r), string(r), nil)
 		} else if isIdent(r) {
 			ident := readUntil(runes, i, isIdent)
-			add(identTok, string(ident), nil)
+			str := string(ident)
+
+			if stringIsBoolean(str) {
+				add(getBoolToken(str), str, nil)
+			} else {
+				add(identTok, str, nil)
+			}
+
 			i += len(ident) - 1
 		} else {
 			word := readUntil(runes, i, not(isWhitespace))
-			add(errTok, string(word), fmt.Errorf("unknown word: `%s`", string(word)))
+			str := string(word)
+
+			if stringIsBoolean(str) {
+				add(getBoolToken(str), str, nil)
+			} else {
+				add(errTok, str, fmt.Errorf("unknown word: `%s`", str))
+			}
+
 			i += len(word) - 1
 		}
 	}
@@ -111,7 +140,7 @@ func scan(raw string) []token {
 	return tokens
 }
 
-func getOpToke(r rune) tokenId {
+func getOpToken(r rune) tokenId {
 	tok, ok := tokenDict[r]
 
 	if !ok {
@@ -119,6 +148,21 @@ func getOpToke(r rune) tokenId {
 	} else {
 		return tok
 	}
+}
+
+func getBoolToken(s string) tokenId {
+	tok, ok := boolDict[s]
+
+	if !ok {
+		return invldTok
+	} else {
+		return tok
+	}
+}
+
+func stringIsBoolean(s string) bool {
+	_, ok := boolDict[s]
+	return ok
 }
 
 func isOp(r rune) bool {
