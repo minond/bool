@@ -9,91 +9,76 @@ import (
 	"github.com/davecgh/go-spew/spew"
 )
 
+const (
+	// For > .mode MODE
+	scanMode  = "scan"
+	parseMode = "parse"
+	evalMode  = "eval"
+
+	// For > MODE: expression
+	scanLine  = "scan:"
+	parseLine = "parse:"
+	evalLine  = "eval:"
+
+	setMode = ".mode "
+)
+
 func main() {
 	reader := bufio.NewReader(os.Stdin)
 	env := newEnvironment(nil)
-
-	scanMode := "scan:"
-	modeMode := "mode:"
-	evalMode := "eval:"
-	astMode := "ast:"
-	currMode := evalMode
+	mode := evalMode
 
 	for {
-		fmt.Print("\n> ")
+		fmt.Print("> ")
 		text, _ := reader.ReadString('\n')
+		text = strings.TrimSpace(text)
 
-		switch strings.TrimSpace(text) {
-		case "quit":
-			fallthrough
-		case "exit":
+		switch text {
+		case ".quit":
 			fmt.Println("< Goodbye")
 			return
 
-		case "m":
-			fallthrough
-		case "mode":
-			fmt.Printf("< %s on\n", currMode)
+		case ".mode":
+			fmt.Printf("< %s mode\n", mode)
 
-		case "h":
-			fallthrough
-		case "help":
-			fmt.Printf("< mode: display or change evaluation mode to one of [%s %s %s]\n", scanMode, astMode, evalMode)
-			fmt.Println("< keyboard: print a keyboard with valid operations and their ascii representation.")
+		case ".help":
+			fmt.Printf("< .mode: display or change evaluation mode to %s, %s, or %s.\n", scanMode, parseMode, evalMode)
+			fmt.Println("< .keyboard: print a keyboard with valid operations and their ascii representation.")
+			fmt.Println("< .help: view this help text.")
+			fmt.Println("< .quit: exit program.")
 
-		case "k":
-			fallthrough
-		case "keyboard":
+		case ".keyboard":
 			fmt.Printf("< conjunction: %s or %s\n", string(andRn), string(andAsciiRn))
 			fmt.Printf("< disjunction: %s or %s\n", string(orRn), string(orAsciiRn))
 			fmt.Printf("< negation: %s or %s\n", string(notRn), string(notAsciiRn))
 
 		default:
-			input := strings.TrimSpace(text)
-			scanning := strings.HasPrefix(input, scanMode)
-			modding := strings.HasPrefix(input, modeMode)
-			asting := strings.HasPrefix(input, astMode)
-			evaling := strings.HasPrefix(input, evalMode)
-
-			if modding {
-				req := strings.TrimSpace(strings.TrimPrefix(text, modeMode))
-
-				switch req {
-				case "scan":
-					currMode = scanMode
-
-				case "eval":
-					currMode = evalMode
-
-				case "ast":
-					currMode = astMode
-
+			if strings.HasPrefix(text, setMode) {
+				maybeMode := strings.TrimSpace(strings.TrimPrefix(text, setMode))
+				switch maybeMode {
+				case scanMode:
+					mode = scanMode
+				case parseMode:
+					mode = parseMode
+				case evalMode:
+					mode = evalMode
 				default:
-					fmt.Printf("< error: invalid mode %s\n", req)
-					fmt.Printf("< options: [%s %s %s]\n", scanMode, astMode, evalMode)
+					fmt.Printf("< error: Invalid mode `%s`\n", maybeMode)
+					continue
 				}
 
-				fmt.Printf("< %s on\n", currMode)
-				continue
-			} else if scanning {
-				input = strings.TrimSpace(strings.TrimPrefix(text, scanMode))
-			} else if asting {
-				input = strings.TrimSpace(strings.TrimPrefix(text, astMode))
-			} else if evaling {
-				input = strings.TrimSpace(strings.TrimPrefix(text, evalMode))
-			}
-
-			if scanning || currMode == scanMode {
-				toks := scan(input)
-
-				for _, t := range toks {
+				fmt.Printf("< switching to %s mode\n", mode)
+			} else if strings.HasPrefix(text, ".") {
+				fmt.Printf("< error: Unknown command: `%s`. Enter `.help` for help.\n", text)
+			} else if mode == scanMode || strings.HasPrefix(text, scanLine) {
+				for _, t := range scan(strings.TrimPrefix(text, scanLine)) {
 					fmt.Printf("< %04d %s\n", t.pos, t)
 				}
-			} else if asting || currMode == astMode {
-				spew.Dump(parse(scan(input)))
-			} else if evaling || currMode == evalMode {
+			} else if mode == parseMode || strings.HasPrefix(text, parseLine) {
+				spew.Dump(parse(scan(strings.TrimPrefix(text, parseLine))))
+			} else if mode == evalMode || strings.HasPrefix(text, evalLine) {
 				var errs []error
-				ast := parse(scan(input))
+				ast := parse(scan(strings.TrimPrefix(text, evalLine)))
 
 				switch v := ast.(type) {
 				case expression:
@@ -105,12 +90,14 @@ func main() {
 
 				if len(errs) > 0 {
 					for _, err := range errs {
-						fmt.Printf("> error: %s\n", err)
+						fmt.Printf("< error: %s\n", err)
 					}
 				} else {
 					fmt.Printf("= %t\n", ast.eval(env).internal)
 				}
 			}
 		}
+
+		fmt.Print("\n")
 	}
 }
