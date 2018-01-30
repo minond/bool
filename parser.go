@@ -2,6 +2,7 @@ package main
 
 import (
 	"errors"
+	"fmt"
 )
 
 type parser struct {
@@ -94,7 +95,12 @@ func (p *parser) unary() expression {
 			expr.literal = &boolean{false}
 		}
 	} else {
-		expr.err = errors.New("Invalid expression.")
+		if p.curr().id == eolTok {
+			expr.err = errors.New("Unexpected end of line.")
+		} else {
+			expr.err = fmt.Errorf("Invalid expression starting in position %d.",
+				p.curr().pos)
+		}
 	}
 
 	return expr
