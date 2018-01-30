@@ -37,7 +37,7 @@ primary      = BOOLEAN
              | "(" expression ")"
 
 */
-func parse(tokens []token) ast {
+func parse(tokens []token) evaluates {
 	par := parser{
 		pos:    0,
 		tokens: tokens,
@@ -47,7 +47,7 @@ func parse(tokens []token) ast {
 	return par.main()
 }
 
-func (p *parser) main() ast {
+func (p *parser) main() evaluates {
 	if p.curr().id == identTok && p.peek().id == eqTok {
 		return p.binding()
 	} else {

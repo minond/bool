@@ -1,7 +1,7 @@
 package main
 
 type environment struct {
-	bindings map[string]boolean
+	bindings map[string]expression
 	parent   *environment
 }
 
@@ -29,14 +29,13 @@ type expression struct {
 	err        error
 }
 
-type ast interface {
+type evaluates interface {
 	eval(env environment) boolean
 }
 
 func (b binding) eval(env environment) boolean {
-	value := b.value.eval(env)
-	env.set(b.label.lexeme, value)
-	return value
+	env.set(b.label.lexeme, b.value)
+	return b.value.eval(env)
 }
 
 func (b expression) eval(env environment) boolean {
@@ -44,7 +43,7 @@ func (b expression) eval(env environment) boolean {
 		return *b.literal
 	} else if b.identifier != nil {
 		val, _ := env.get(b.identifier.lexeme)
-		return val
+		return val.eval(env)
 	}
 
 	return boolean{}
@@ -54,19 +53,19 @@ func (b boolean) eval(env environment) boolean {
 	return b
 }
 
-func (e *environment) get(label string) (boolean, bool) {
+func (e *environment) get(label string) (expression, bool) {
 	val, ok := e.bindings[label]
 	return val, ok
 }
 
-func (e *environment) set(label string, value boolean) boolean {
-	e.bindings[label] = value
-	return value
+func (e *environment) set(label string, expr expression) expression {
+	e.bindings[label] = expr
+	return expr
 }
 
 func newEnvironment(parent *environment) environment {
 	return environment{
-		bindings: make(map[string]boolean),
+		bindings: make(map[string]expression),
 		parent:   parent,
 	}
 }
