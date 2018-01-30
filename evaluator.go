@@ -24,10 +24,8 @@ type binding struct {
 //   - Check 1: err
 //   - Check 2: lhs + op + rhs, this is a binary expression
 //   - Check 3: op + rhs, this is a unary expression with an expression
-//   - Check 4: op + identifier, this is a unary expression with an identifier
-//   - Check 5: op + literal, this is a unary expression with a literal
-//   - Check 6: identifier, this is a plain identifier
-//   - Check 7: literal, this is a plain literal
+//   - Check 4: identifier, this is a plain identifier
+//   - Check 5: literal, this is a plain literal
 type expression struct {
 	err        error
 	lhs        *expression
@@ -46,18 +44,26 @@ func (b binding) eval(env environment) (boolean, error) {
 	return boolean{}, nil
 }
 
-// TODO finish eval path
 func (b expression) eval(env environment) (boolean, error) {
 	if b.err != nil {
 		return boolean{}, fmt.Errorf("Cannot evaluate expression due to error: %s", b.err)
 	} else if b.lhs != nil && b.op != nil && b.rhs != nil {
+		// TODO Finish eval path
 		return boolean{}, errors.New("Unimplemented evaluation path (lhs + op + rhs)")
 	} else if b.op != nil && b.rhs != nil {
-		return boolean{}, errors.New("Unimplemented evaluation path (op + rhs)")
-	} else if b.op != nil && b.identifier != nil {
-		return boolean{}, errors.New("Unimplemented evaluation path (op + identifier)")
-	} else if b.op != nil && b.literal != nil {
-		return boolean{}, errors.New("Unimplemented evaluation path (op + literal)")
+		val, err := b.rhs.eval(env)
+
+		if err != nil {
+			return boolean{}, err
+		}
+
+		switch b.op.id {
+		case notTok:
+			return boolean{!val.internal}, nil
+
+		default:
+			return boolean{}, fmt.Errorf("Unknown unary operator: %s", b.op.lexeme)
+		}
 	} else if b.identifier != nil {
 		val, set := env.get(b.identifier.lexeme)
 
