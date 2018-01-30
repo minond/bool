@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"os"
 	"strings"
+
+	"github.com/davecgh/go-spew/spew"
 )
 
 func main() {
@@ -87,6 +89,7 @@ func main() {
 					fmt.Printf("< %04d %s\n", t.pos, t)
 				}
 			} else if asting || currMode == astMode {
+				spew.Dump(parse(scan(input)))
 			} else if evaling || currMode == evalMode {
 				fmt.Println("= ?")
 			}

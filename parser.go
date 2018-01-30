@@ -2,7 +2,10 @@ package main
 
 import "errors"
 
-type environment struct{}
+type environment struct {
+	bindings map[string]boolean
+	parent   *environment
+}
 
 type parser struct {
 	pos    int
@@ -19,11 +22,18 @@ type binding struct {
 	value expression
 }
 
+// Check 1: lhs + op + rhs
+// Check 2: op + rhs
+// Check 3: op + identifier
+// Check 4: op + literal
+// Check 5: identifier
+// Check 6: literal
 type expression struct {
-	lhs     *expression
-	rhs     *expression
-	op      token
-	literal boolean
+	lhs        *expression
+	rhs        *expression
+	op         *token
+	identifier *token
+	literal    *boolean
 }
 
 type ast interface {
@@ -31,16 +41,24 @@ type ast interface {
 }
 
 func (b binding) eval(env environment) boolean {
-	return boolean{}
-}
-
-func (b boolean) eval(env environment) boolean {
-	return boolean{}
+	value := b.value.eval(env)
+	env.set(b.label.lexeme, value)
+	return value
 }
 
 func (b expression) eval(env environment) boolean {
 	return boolean{}
 }
+
+func (b boolean) eval(env environment) boolean {
+	return b
+}
+
+// XXX
+func (e *environment) get(label string) {}
+
+// XXX
+func (e *environment) set(label string, value boolean) {}
 
 /*
 
@@ -86,29 +104,27 @@ func (p *parser) main() ast {
 	}
 }
 
-func (p *parser) expression() expression {
-	return p.unary()
-}
-
-// XXX
 func (p *parser) binding() binding {
 	label := p.curr()
 
 	p.expect(identTok)
 	p.expect(eqTok)
 
-	value := p.expression()
-
 	return binding{
 		label: label,
-		value: value,
+		value: p.expression(),
 	}
 }
 
-// XXX
+// XXX keep checking for binary expression
+func (p *parser) expression() expression {
+	return p.unary()
+}
+
+// XXX get real unary expression
 func (p *parser) unary() expression {
 	return expression{
-		literal: boolean{},
+		literal: &boolean{},
 	}
 }
 
