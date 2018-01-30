@@ -6,7 +6,7 @@ readme). Here's an example of it's reactive nature:
 
 ```
 $ bool
-> x = y ^ ¬z
+> x is y ^ ¬z
 < ok
 
 > x
@@ -14,10 +14,10 @@ $ bool
 < error: Undefined identifier `y`
 < error: Undefined identifier `z`
 
-> y = true
+> where y is true
 < ok
 
-> z = false
+> and z is false
 < ok
 
 > x

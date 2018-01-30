@@ -23,12 +23,12 @@ LETTER       = 'a' | .. | 'z'
 DIGIT        = '0' | .. | '9'
 BOOLEAN      = "true" | "false" | "1" | "0"
 
-MAIN         = { expression | binding } ;
+MAIN         = { ["where"|"and"] binding | expression } ;
 
 identifier   = LETTER , { LETTER | DIGIT | "_" } ;
 value        = "true" | "false" ;
 
-binding      = identifier "=" expression ;
+binding      = identifier "is" expression ;
 expression   = unary { BIN_OPERATOR unary } ;
 unary        = UNI_OPERATOR unary
              | primary ;
@@ -48,7 +48,10 @@ func parse(tokens []token) evaluates {
 }
 
 func (p *parser) main() evaluates {
-	if p.curr().id == identTok && p.peek().id == eqTok {
+	if p.match(bindContTok) {
+		// We have to be a binding here
+		return p.binding()
+	} else if p.curr().id == identTok && p.peek().id == bindTok {
 		return p.binding()
 	} else {
 		return p.expression()
@@ -59,7 +62,7 @@ func (p *parser) binding() binding {
 	label := p.curr()
 
 	p.expect(identTok)
-	p.expect(eqTok)
+	p.expect(bindTok)
 
 	return binding{
 		label: label,

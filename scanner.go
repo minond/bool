@@ -13,16 +13,17 @@ type token struct {
 }
 
 const (
-	errTok   tokenId = "err"
-	invldTok tokenId = "invalid"
-	eolTok   tokenId = "eol"
-	andTok   tokenId = "and"
-	notTok   tokenId = "not"
-	orTok    tokenId = "or"
-	identTok tokenId = "id"
-	eqTok    tokenId = "eq"
-	falseTok tokenId = "false"
-	trueTok  tokenId = "true"
+	errTok      tokenId = "err"
+	invldTok    tokenId = "invalid"
+	eolTok      tokenId = "eol"
+	andTok      tokenId = "and"
+	notTok      tokenId = "not"
+	orTok       tokenId = "or"
+	identTok    tokenId = "id"
+	bindTok     tokenId = "is"
+	bindContTok tokenId = "where"
+	falseTok    tokenId = "false"
+	trueTok     tokenId = "true"
 
 	andAsciiRn = rune('^')
 	andRn      = rune('∧')
@@ -39,11 +40,16 @@ var (
 	tokenDict = map[rune]tokenId{
 		andAsciiRn: andTok,
 		andRn:      andTok,
-		eqRn:       eqTok,
 		notRn:      notTok,
 		notAsciiRn: notTok,
 		orAsciiRn:  orTok,
 		orRn:       orTok,
+	}
+
+	keywordDict = map[string]tokenId{
+		"is":    bindTok,
+		"where": bindContTok,
+		"and":   bindContTok,
 	}
 
 	boolDict = map[string]tokenId{
@@ -77,8 +83,11 @@ func (t token) String() string {
 	case identTok:
 		str = fmt.Sprintf("ID(%s)", t.lexeme)
 
-	case eqTok:
-		str = "EQ"
+	case bindContTok:
+		str = "WHERE"
+
+	case bindTok:
+		str = "BIND"
 
 	case falseTok:
 		str = "FALSE"
@@ -120,7 +129,9 @@ func scan(raw string) []token {
 			ident := readUntil(runes, i, isIdent)
 			str := string(ident)
 
-			if stringIsBoolean(str) {
+			if stringIsKeyword(str) {
+				add(getKeywordToken(str), str, nil)
+			} else if stringIsBoolean(str) {
 				add(getBoolToken(str), str, nil)
 			} else {
 				add(identTok, str, nil)
@@ -163,6 +174,16 @@ func getOpToken(r rune) tokenId {
 	}
 }
 
+func getKeywordToken(s string) tokenId {
+	tok, ok := keywordDict[s]
+
+	if !ok {
+		return invldTok
+	} else {
+		return tok
+	}
+}
+
 func getBoolToken(s string) tokenId {
 	tok, ok := boolDict[s]
 
@@ -171,6 +192,11 @@ func getBoolToken(s string) tokenId {
 	} else {
 		return tok
 	}
+}
+
+func stringIsKeyword(s string) bool {
+	_, ok := keywordDict[s]
+	return ok
 }
 
 func stringIsBoolean(s string) bool {
