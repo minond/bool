@@ -92,7 +92,24 @@ func main() {
 			} else if asting || currMode == astMode {
 				spew.Dump(parse(scan(input)))
 			} else if evaling || currMode == evalMode {
-				fmt.Printf("= %t\n", parse(scan(input)).eval(env).internal)
+				var errs []error
+				ast := parse(scan(input))
+
+				switch v := ast.(type) {
+				case expression:
+					errs = v.errors()
+
+				case binding:
+					errs = v.value.errors()
+				}
+
+				if len(errs) > 0 {
+					for _, err := range errs {
+						fmt.Printf("> error: %s\n", err)
+					}
+				} else {
+					fmt.Printf("= %t\n", ast.eval(env).internal)
+				}
 			}
 		}
 	}

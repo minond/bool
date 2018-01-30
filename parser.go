@@ -2,7 +2,6 @@ package main
 
 import (
 	"errors"
-	"fmt"
 )
 
 type environment struct {
@@ -75,6 +74,31 @@ func (e *environment) set(label string, value boolean) boolean {
 	return value
 }
 
+func newEnvironment(parent *environment) environment {
+	return environment{
+		bindings: make(map[string]boolean),
+		parent:   parent,
+	}
+}
+
+func (e expression) errors() []error {
+	var errs []error
+
+	if e.lhs != nil {
+		errs = append(errs, e.lhs.errors()...)
+	}
+
+	if e.rhs != nil {
+		errs = append(errs, e.rhs.errors()...)
+	}
+
+	if e.err != nil {
+		errs = append(errs, e.err)
+	}
+
+	return errs
+}
+
 /*
 
       =============
@@ -110,13 +134,6 @@ func parse(tokens []token) ast {
 	}
 
 	return par.main()
-}
-
-func newEnvironment(parent *environment) environment {
-	return environment{
-		bindings: make(map[string]boolean),
-		parent:   parent,
-	}
 }
 
 func (p *parser) main() ast {
@@ -166,8 +183,7 @@ func (p *parser) unary() expression {
 			expr.literal = &boolean{false}
 		}
 	} else {
-		fmt.Println("invalid expression")
-		expr.err = errors.New("invalid expression")
+		expr.err = errors.New("Invalid expression.")
 	}
 
 	return expr
