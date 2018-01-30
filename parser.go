@@ -73,7 +73,7 @@ func (p *parser) binding() binding {
 func (p *parser) expression() expression {
 	expr := p.unary()
 
-	for p.match(andTok, orTok) {
+	for p.match(andTok, orTok, miTok, xorTok, eqTok) {
 		lhs := expr
 		op := cloneToken(p.prev())
 		rhs := p.unary()

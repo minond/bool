@@ -64,6 +64,17 @@ func (b expression) eval(env environment) (boolean, []error) {
 		case orTok:
 			return boolean{lhs.internal || rhs.internal}, nil
 
+		case miTok:
+			return boolean{!lhs.internal || rhs.internal}, nil
+
+		case xorTok:
+			return boolean{
+				(lhs.internal || rhs.internal) && !(lhs.internal && rhs.internal),
+			}, nil
+
+		case eqTok:
+			return boolean{lhs.internal == rhs.internal}, nil
+
 		default:
 			return boolean{}, []error{fmt.Errorf("Unknown unary operator: %s", b.op.lexeme)}
 		}
