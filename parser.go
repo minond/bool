@@ -67,12 +67,12 @@ func (p *parser) binding() binding {
 	}
 }
 
-// XXX keep checking for binary expression
+// TODO keep checking for binary expression
 func (p *parser) expression() expression {
 	return p.unary()
 }
 
-// XXX get real unary expression
+// TODO get real unary expression
 func (p *parser) unary() expression {
 	expr := expression{}
 

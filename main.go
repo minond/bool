@@ -20,7 +20,11 @@ const (
 	parseLine = "parse:"
 	evalLine  = "eval:"
 
-	setMode = ".mode "
+	setMode     = ".mode "
+	cmdMode     = ".mode"
+	cmdQuit     = ".quit"
+	cmdHelp     = ".help"
+	cmdKeyboard = ".keyboard"
 )
 
 func main() {
@@ -34,26 +38,28 @@ func main() {
 		text = strings.TrimSpace(text)
 
 		switch text {
-		case ".quit":
+		case cmdQuit:
 			fmt.Println("< Goodbye")
 			return
 
-		case ".mode":
+		case cmdMode:
 			fmt.Printf("< %s mode\n", mode)
 
-		case ".help":
-			fmt.Printf("< .mode: display or change evaluation mode to %s, %s, or %s.\n", scanMode, parseMode, evalMode)
-			fmt.Println("< .keyboard: print a keyboard with valid operations and their ascii representation.")
-			fmt.Println("< .help: view this help text.")
-			fmt.Println("< .quit: exit program.")
+		case cmdHelp:
+			fmt.Printf("< %s: display or change evaluation mode to %s, %s, or %s.\n", cmdMode, scanMode, parseMode, evalMode)
+			fmt.Printf("< %s: print a keyboard with valid operations and their ascii representation.\n", cmdKeyboard)
+			fmt.Printf("< %s: view this help text.\n", cmdHelp)
+			fmt.Printf("< %s: exit program.\n", cmdQuit)
 
-		case ".keyboard":
+		case cmdKeyboard:
 			fmt.Printf("< conjunction: %s or %s\n", string(andRn), string(andAsciiRn))
 			fmt.Printf("< disjunction: %s or %s\n", string(orRn), string(orAsciiRn))
 			fmt.Printf("< negation: %s or %s\n", string(notRn), string(notAsciiRn))
 
 		default:
-			if strings.HasPrefix(text, setMode) {
+			if text == "" {
+				continue
+			} else if strings.HasPrefix(text, setMode) {
 				maybeMode := strings.TrimSpace(strings.TrimPrefix(text, setMode))
 				switch maybeMode {
 				case scanMode:
@@ -77,23 +83,53 @@ func main() {
 			} else if mode == parseMode || strings.HasPrefix(text, parseLine) {
 				spew.Dump(parse(scan(strings.TrimPrefix(text, parseLine))))
 			} else if mode == evalMode || strings.HasPrefix(text, evalLine) {
-				var errs []error
-				ast := parse(scan(strings.TrimPrefix(text, evalLine)))
+				// FIXME This is really ugly. This to clean up:
+				//
+				//   1. There should be only way to get errors out of an
+				//   evaluates expression.
+				//
+				//   2. A lot of the error checking and printing should be in a
+				//   separate function so main doesn't get messy.
+				//
+				//   3. I don't like that there is a need for an isBinding flag
+				//   that gets used at the end. This should be somehow cleaner.
+				var parseErrors []error
+				isBinding := false
+				expr := parse(scan(strings.TrimPrefix(text, evalLine)))
 
-				switch v := ast.(type) {
+				switch v := expr.(type) {
 				case expression:
-					errs = v.errors()
+					parseErrors = v.errors()
 
 				case binding:
-					errs = v.value.errors()
+					parseErrors = v.value.errors()
+					isBinding = true
 				}
 
-				if len(errs) > 0 {
-					for _, err := range errs {
+				if len(parseErrors) > 0 {
+					fmt.Println("< error: Cannot parse expression due to errors:")
+
+					for _, err := range parseErrors {
 						fmt.Printf("< error: %s\n", err)
 					}
+
+					fmt.Println()
+					continue
+				}
+
+				ret, err := expr.eval(env)
+
+				if err != nil {
+					fmt.Println("< error: Cannot evaluate expression due to errors:")
+					fmt.Printf("< error: %s\n", err)
+					fmt.Println()
+					continue
+				}
+
+				if isBinding {
+					fmt.Println("< ok")
 				} else {
-					fmt.Printf("= %t\n", ast.eval(env).internal)
+					fmt.Printf("= %t\n", ret.internal)
 				}
 			}
 		}

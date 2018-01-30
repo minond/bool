@@ -1,5 +1,10 @@
 package main
 
+import (
+	"errors"
+	"fmt"
+)
+
 type environment struct {
 	bindings map[string]expression
 	parent   *environment
@@ -33,27 +38,34 @@ type expression struct {
 }
 
 type evaluates interface {
-	eval(env environment) boolean
+	eval(env environment) (boolean, error)
 }
 
-func (b binding) eval(env environment) boolean {
+func (b binding) eval(env environment) (boolean, error) {
 	env.set(b.label.lexeme, b.value)
-	return b.value.eval(env)
+	return boolean{}, nil
 }
 
-func (b expression) eval(env environment) boolean {
+// TODO finish eval path
+func (b expression) eval(env environment) (boolean, error) {
 	if b.literal != nil {
-		return *b.literal
+		return *b.literal, nil
 	} else if b.identifier != nil {
-		val, _ := env.get(b.identifier.lexeme)
-		return val.eval(env)
+		val, set := env.get(b.identifier.lexeme)
+
+		if !set {
+			return boolean{}, fmt.Errorf("Undefined identifier `%s`",
+				b.identifier.lexeme)
+		} else {
+			return val.eval(env)
+		}
 	}
 
-	return boolean{}
+	return boolean{}, errors.New("Unimplemented evaluation path")
 }
 
-func (b boolean) eval(env environment) boolean {
-	return b
+func (b boolean) eval(env environment) (boolean, error) {
+	return b, nil
 }
 
 func (e *environment) get(label string) (expression, bool) {
