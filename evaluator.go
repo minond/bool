@@ -48,8 +48,16 @@ func (b binding) eval(env environment) (boolean, error) {
 
 // TODO finish eval path
 func (b expression) eval(env environment) (boolean, error) {
-	if b.literal != nil {
-		return *b.literal, nil
+	if b.err != nil {
+		return boolean{}, fmt.Errorf("Cannot evaluate expression due to error: %s", b.err)
+	} else if b.lhs != nil && b.op != nil && b.rhs != nil {
+		return boolean{}, errors.New("Unimplemented evaluation path (lhs + op + rhs)")
+	} else if b.op != nil && b.rhs != nil {
+		return boolean{}, errors.New("Unimplemented evaluation path (op + rhs)")
+	} else if b.op != nil && b.identifier != nil {
+		return boolean{}, errors.New("Unimplemented evaluation path (op + identifier)")
+	} else if b.op != nil && b.literal != nil {
+		return boolean{}, errors.New("Unimplemented evaluation path (op + literal)")
 	} else if b.identifier != nil {
 		val, set := env.get(b.identifier.lexeme)
 
@@ -59,9 +67,11 @@ func (b expression) eval(env environment) (boolean, error) {
 		} else {
 			return val.eval(env)
 		}
+	} else if b.literal != nil {
+		return *b.literal, nil
+	} else {
+		return boolean{}, errors.New("Unimplemented evaluation path")
 	}
-
-	return boolean{}, errors.New("Unimplemented evaluation path")
 }
 
 func (b boolean) eval(env environment) (boolean, error) {
