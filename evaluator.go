@@ -41,6 +41,13 @@ type evaluates interface {
 }
 
 func (b binding) eval(env environment) (boolean, []error) {
+	for _, id := range b.value.identifiers(env) {
+		if id.lexeme == b.label.lexeme {
+			return boolean{}, []error{fmt.Errorf("Detected circular reference in `%s` identifier",
+				b.label.lexeme)}
+		}
+	}
+
 	env.set(b.label.lexeme, b.value)
 	return boolean{}, nil
 }
@@ -130,6 +137,29 @@ func newEnvironment(parent *environment) environment {
 		bindings: make(map[string]expression),
 		parent:   parent,
 	}
+}
+
+func (e expression) identifiers(env environment) []token {
+	var tokens []token
+
+	if e.identifier != nil {
+		tokens = append(tokens, *e.identifier)
+		ident, ok := env.get(e.identifier.lexeme)
+
+		if ok {
+			tokens = append(tokens, ident.identifiers(env)...)
+		}
+	}
+
+	if e.lhs != nil {
+		tokens = append(tokens, e.lhs.identifiers(env)...)
+	}
+
+	if e.rhs != nil {
+		tokens = append(tokens, e.rhs.identifiers(env)...)
+	}
+
+	return tokens
 }
 
 func (e expression) errors() []error {

@@ -49,6 +49,5 @@ are cool nonetheless.
 ## TODO
 
 - Read files and stdin as source.
-- Catch circlular evaluation.
 - Add feature to print truth tables.
 - Print prettier ASTs.
