@@ -88,26 +88,13 @@ func main() {
 			} else if mode == evalMode || strings.HasPrefix(text, evalLine) {
 				// FIXME This is really ugly. This to clean up:
 				//
-				//   1. There should be only way to get errors out of an
-				//   evaluates expression.
+				//   1. I don't like that there is a need for an isBinding flag
+				//   that gets used at the end. This should be somehow cleaner.
 				//
 				//   2. A lot of the error checking and printing should be in a
 				//   separate function so main doesn't get messy.
-				//
-				//   3. I don't like that there is a need for an isBinding flag
-				//   that gets used at the end. This should be somehow cleaner.
-				var parseErrors []error
 				isBinding := false
-				expr := parse(scan(strings.TrimPrefix(text, evalLine)))
-
-				switch v := expr.(type) {
-				case expression:
-					parseErrors = v.errors()
-
-				case binding:
-					parseErrors = v.value.errors()
-					isBinding = true
-				}
+				expr, parseErrors := parse(scan(strings.TrimPrefix(text, evalLine)))
 
 				if len(parseErrors) > 0 {
 					fmt.Println("< error: Cannot parse expression due to errors:")
@@ -118,6 +105,11 @@ func main() {
 
 					fmt.Println()
 					continue
+				}
+
+				switch expr.(type) {
+				case binding:
+					isBinding = true
 				}
 
 				ret, evalErrors := expr.eval(env)

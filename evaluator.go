@@ -104,7 +104,7 @@ func (b expression) eval(env environment) (boolean, []error) {
 	} else if b.literal != nil {
 		return *b.literal, nil
 	} else {
-		return boolean{}, []error{errors.New("Unimplemented evaluation path")}
+		return boolean{}, []error{errors.New("Invalid evaluation path")}
 	}
 }
 

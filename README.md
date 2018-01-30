@@ -48,6 +48,5 @@ are cool nonetheless.
 
 ## TODO
 
-- Missing Boolean Algebra operations.
 - Read files and stdin as source.
 - Catch circlular evaluation.

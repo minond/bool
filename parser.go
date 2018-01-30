@@ -37,14 +37,25 @@ primary      = BOOLEAN
              | identifier
 
 */
-func parse(tokens []token) evaluates {
+func parse(tokens []token) (evaluates, []error) {
 	par := parser{
 		pos:    0,
 		tokens: tokens,
 		errs:   []error{},
 	}
 
-	return par.main()
+	expr := par.main()
+	errs := par.errs
+
+	switch v := expr.(type) {
+	case expression:
+		errs = append(errs, v.errors()...)
+
+	case binding:
+		errs = append(errs, v.value.errors()...)
+	}
+
+	return expr, errs
 }
 
 func (p *parser) main() evaluates {
@@ -54,7 +65,14 @@ func (p *parser) main() evaluates {
 	} else if p.curr().id == identTok && p.peek().id == bindTok {
 		return p.binding()
 	} else {
-		return p.expression()
+		expr := p.expression()
+
+		if !p.done() {
+			p.errs = append(p.errs, fmt.Errorf("Unexpected word a position %d `%s`",
+				p.curr().pos, p.curr().lexeme))
+		}
+
+		return expr
 	}
 }
 
@@ -162,4 +180,8 @@ func (p parser) peek() token {
 	} else {
 		return p.tokens[p.pos+1]
 	}
+}
+
+func (p parser) done() bool {
+	return p.pos >= len(p.tokens)
 }
