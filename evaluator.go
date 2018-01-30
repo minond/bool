@@ -24,6 +24,7 @@ type binding struct {
 //   - Check 1: err
 //   - Check 2: lhs + op + rhs, this is a binary expression
 //   - Check 3: op + rhs, this is a unary expression with an expression
+//   - Check 3: lhs, this is a grouped expression
 //   - Check 4: identifier, this is a plain identifier
 //   - Check 5: literal, this is a plain literal
 type expression struct {
@@ -92,6 +93,8 @@ func (b expression) eval(env environment) (boolean, []error) {
 		default:
 			return boolean{}, []error{fmt.Errorf("Unknown unary operator: %s", b.op.lexeme)}
 		}
+	} else if b.lhs != nil {
+		return b.lhs.eval(env)
 	} else if b.identifier != nil {
 		val, set := env.get(b.identifier.lexeme)
 

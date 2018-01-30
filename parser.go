@@ -35,6 +35,7 @@ unary        = UNI_OPERATOR unary
 
 primary      = BOOLEAN
              | identifier
+             | "(" expression ")"
 
 */
 func parse(tokens []token) (evaluates, []error) {
@@ -79,6 +80,7 @@ func (p *parser) main() evaluates {
 func (p *parser) binding() binding {
 	label := p.curr()
 
+	// TODO Store these errors
 	p.expect(identTok)
 	p.expect(bindTok)
 
@@ -125,6 +127,11 @@ func (p *parser) unary() expression {
 		} else {
 			expr.literal = &boolean{false}
 		}
+	} else if p.match(oparenTok) {
+		// unary = "(" expression ")"
+		lhs := p.expression()
+		expr.lhs = &lhs
+		expr.err = p.expect(cparenTok)
 	} else if p.curr().id == eolTok {
 		expr.err = errors.New("Unexpected end of line.")
 	} else {
@@ -137,7 +144,8 @@ func (p *parser) unary() expression {
 
 func (p *parser) expect(ids ...tokenId) error {
 	if !p.match(ids...) {
-		return errors.New("err")
+		return fmt.Errorf("Expecting one of the following tokens [%v] but found %s",
+			ids, p.curr().id)
 	}
 
 	return nil

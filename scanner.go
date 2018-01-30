@@ -16,6 +16,7 @@ const (
 	andTok      tokenId = "and"
 	bindContTok tokenId = "where"
 	bindTok     tokenId = "is"
+	cparenTok   tokenId = "cparen"
 	eolTok      tokenId = "eol"
 	eqTok       tokenId = "EQ"
 	errTok      tokenId = "err"
@@ -24,12 +25,14 @@ const (
 	invldTok    tokenId = "invalid"
 	miTok       tokenId = "matimp"
 	notTok      tokenId = "not"
+	oparenTok   tokenId = "oparen"
 	orTok       tokenId = "or"
 	trueTok     tokenId = "true"
 	xorTok      tokenId = "xor"
 
 	andAsciiRn = rune('^')
 	andRn      = rune('∧')
+	cparenRn   = rune(')')
 	eqAsciiRn  = rune('=')
 	eqRn       = rune('≡')
 	miAsciiRn  = rune('>')
@@ -37,6 +40,7 @@ const (
 	nlRn       = rune('\n')
 	notAsciiRn = rune('!')
 	notRn      = rune('¬')
+	oparenRn   = rune('(')
 	orAsciiRn  = rune('v')
 	orRn       = rune('∨')
 	spaceRn    = rune(' ')
@@ -100,6 +104,12 @@ func (t token) String() string {
 	case xorTok:
 		str = "XOR"
 
+	case oparenTok:
+		str = "OPEN-PAREN"
+
+	case cparenTok:
+		str = "CLOSE-PAREN"
+
 	case miTok:
 		str = "MATERIAL-IMPLICATION"
 
@@ -148,6 +158,10 @@ func scan(raw string) []token {
 			continue
 		} else if isOp(r) {
 			add(getOpToken(r), string(r), nil)
+		} else if r == oparenRn {
+			add(oparenTok, "(", nil)
+		} else if r == cparenRn {
+			add(cparenTok, ")", nil)
 		} else if isIdent(r) {
 			ident := readUntil(runes, i, isIdent)
 			str := string(ident)
