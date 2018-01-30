@@ -15,6 +15,7 @@ type token struct {
 const (
 	errTok   tokenId = "err"
 	invldTok tokenId = "invalid"
+	eolTok   tokenId = "eol"
 	andTok   tokenId = "and"
 	notTok   tokenId = "not"
 	orTok    tokenId = "or"
@@ -84,6 +85,9 @@ func (t token) String() string {
 
 	case trueTok:
 		str = "TRUE"
+
+	case eolTok:
+		str = "EOL"
 	}
 
 	return fmt.Sprintf("%s", str)
