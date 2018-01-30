@@ -1,1 +1,21 @@
-A Boolean Algebray DLS. To run: `go run *.go`
+A reactive Boolean Algebray domain-specific language. Download and install the `bool` binary using `go get github.com/minond/bool`. An example of it's reactive nature:
+
+$ bool
+> x = y ^ z
+< ok
+
+> x
+< error: Cannot evaluate expression due to errors:
+< error: Undefined identifier `y`
+
+> y = true
+< ok
+
+> z = false
+< ok
+
+> x
+= false
+
+> .quit
+< Goodbye
