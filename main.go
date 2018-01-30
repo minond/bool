@@ -11,6 +11,7 @@ import (
 
 func main() {
 	reader := bufio.NewReader(os.Stdin)
+	env := newEnvironment(nil)
 
 	scanMode := "scan:"
 	modeMode := "mode:"
@@ -91,7 +92,7 @@ func main() {
 			} else if asting || currMode == astMode {
 				spew.Dump(parse(scan(input)))
 			} else if evaling || currMode == evalMode {
-				fmt.Println("= ?")
+				fmt.Printf("= %t\n", parse(scan(input)).eval(env).internal)
 			}
 		}
 	}

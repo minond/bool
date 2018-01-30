@@ -1,6 +1,9 @@
 package main
 
-import "errors"
+import (
+	"errors"
+	"fmt"
+)
 
 type environment struct {
 	bindings map[string]boolean
@@ -34,6 +37,7 @@ type expression struct {
 	op         *token
 	identifier *token
 	literal    *boolean
+	err        error
 }
 
 type ast interface {
@@ -47,6 +51,13 @@ func (b binding) eval(env environment) boolean {
 }
 
 func (b expression) eval(env environment) boolean {
+	if b.literal != nil {
+		return *b.literal
+	} else if b.identifier != nil {
+		val, _ := env.get(b.identifier.lexeme)
+		return val
+	}
+
 	return boolean{}
 }
 
@@ -82,11 +93,12 @@ identifier   = LETTER , { LETTER | DIGIT | "_" } ;
 value        = "true" | "false" ;
 
 binding      = identifier "=" expression ;
-expression   = unaryOp { BIN_OPERATOR unaryOp } ;
-unaryOp      = UNI_OPERATOR unaryOp
+expression   = unary { BIN_OPERATOR unary } ;
+unary        = UNI_OPERATOR unary
              | primary ;
 
 primary      = BOOLEAN
+             | identifier
              | "(" expression ")"
 
 */
@@ -98,6 +110,13 @@ func parse(tokens []token) ast {
 	}
 
 	return par.main()
+}
+
+func newEnvironment(parent *environment) environment {
+	return environment{
+		bindings: make(map[string]boolean),
+		parent:   parent,
+	}
 }
 
 func (p *parser) main() ast {
@@ -127,9 +146,31 @@ func (p *parser) expression() expression {
 
 // XXX get real unary expression
 func (p *parser) unary() expression {
-	return expression{
-		literal: &boolean{},
+	expr := expression{}
+
+	if p.match(notTok) {
+		// unary = UNI_OPERATOR unary
+		tok := cloneToken(p.prev())
+		rhs := p.unary()
+		expr.op = &tok
+		expr.rhs = &rhs
+	} else if p.match(identTok) {
+		// unary = primary = identifier
+		tok := cloneToken(p.prev())
+		expr.identifier = &tok
+	} else if p.match(trueTok, falseTok) {
+		// unary = primary = BOOLEAN
+		if p.prev().id == trueTok {
+			expr.literal = &boolean{true}
+		} else {
+			expr.literal = &boolean{false}
+		}
+	} else {
+		fmt.Println("invalid expression")
+		expr.err = errors.New("invalid expression")
 	}
+
+	return expr
 }
 
 func (p *parser) expect(ids ...tokenId) error {
@@ -156,7 +197,7 @@ func (p *parser) eat() {
 }
 
 func (p parser) prev() token {
-	if p.pos-1 > len(p.tokens) {
+	if p.pos-1 >= len(p.tokens) {
 		return token{id: eolTok}
 	} else {
 		return p.tokens[p.pos-1]
@@ -164,7 +205,7 @@ func (p parser) prev() token {
 }
 
 func (p parser) curr() token {
-	if p.pos > len(p.tokens) {
+	if p.pos >= len(p.tokens) {
 		return token{id: eolTok}
 	} else {
 		return p.tokens[p.pos]
@@ -172,7 +213,7 @@ func (p parser) curr() token {
 }
 
 func (p parser) peek() token {
-	if p.pos+1 > len(p.tokens) {
+	if p.pos+1 >= len(p.tokens) {
 		return token{id: eolTok}
 	} else {
 		return p.tokens[p.pos+1]

@@ -144,6 +144,15 @@ func scan(raw string) []token {
 	return tokens
 }
 
+func cloneToken(tok token) token {
+	return token{
+		id:     tok.id,
+		lexeme: tok.lexeme,
+		pos:    tok.pos,
+		err:    tok.err,
+	}
+}
+
 func getOpToken(r rune) tokenId {
 	tok, ok := tokenDict[r]
 
