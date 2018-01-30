@@ -24,23 +24,26 @@ func main() {
 		case "quit":
 			fallthrough
 		case "exit":
+			fmt.Println("< Goodbye")
 			return
 
 		case "m":
 			fallthrough
 		case "mode":
-			fmt.Printf("  %s on\n", currMode)
+			fmt.Printf("< %s on\n", currMode)
+
+		case "h":
+			fallthrough
+		case "help":
+			fmt.Printf("< mode: display or change evaluation mode to one of [%s %s %s]\n", scanMode, astMode, evalMode)
+			fmt.Println("< keyboard: print a keyboard with valid operations and their ascii representation.")
 
 		case "k":
 			fallthrough
 		case "keyboard":
-			fmt.Println("")
-			fmt.Println("-----------------------------------")
-			fmt.Println("Operation | Character | Name")
-			fmt.Println("-----------------------------------")
-			fmt.Printf("%5s     | %5s     | Conjunction\n", string(andRn), string(andAsciiRn))
-			fmt.Printf("%5s     | %5s     | Disjunction\n", string(orRn), string(orAsciiRn))
-			fmt.Printf("%5s     | %5s     | Negation\n", string(notRn), string(notAsciiRn))
+			fmt.Printf("< conjunction: %s or %s\n", string(andRn), string(andAsciiRn))
+			fmt.Printf("< disjunction: %s or %s\n", string(orRn), string(orAsciiRn))
+			fmt.Printf("< negation: %s or %s\n", string(notRn), string(notAsciiRn))
 
 		default:
 			input := strings.TrimSpace(text)
@@ -63,11 +66,11 @@ func main() {
 					currMode = astMode
 
 				default:
-					fmt.Printf("  error: invalid mode %s\n", req)
-					fmt.Printf("  options: [%s %s %s]\n", scanMode, astMode, evalMode)
+					fmt.Printf("< error: invalid mode %s\n", req)
+					fmt.Printf("< options: [%s %s %s]\n", scanMode, astMode, evalMode)
 				}
 
-				fmt.Printf("  %s on\n", currMode)
+				fmt.Printf("< %s on\n", currMode)
 				continue
 			} else if scanning {
 				input = strings.TrimSpace(strings.TrimPrefix(text, scanMode))
