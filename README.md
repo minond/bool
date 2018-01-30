@@ -1,5 +1,8 @@
-A reactive Boolean Algebray domain-specific language. Download and install the `bool` binary using `go get github.com/minond/bool`. An example of it's reactive nature:
+Bool is a reactive domain-specific language for Boolean Algebra. Download and
+install the `bool` binary using `go get github.com/minond/bool`. An example of
+it's reactive nature:
 
+```
 $ bool
 > x = y ^ z
 < ok
@@ -20,3 +23,4 @@ $ bool
 
 > .quit
 < Goodbye
+```
