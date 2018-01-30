@@ -14,19 +14,22 @@ type binding struct {
 	value expression
 }
 
-// Check 1: lhs + op + rhs
-// Check 2: op + rhs
-// Check 3: op + identifier
-// Check 4: op + literal
-// Check 5: identifier
-// Check 6: literal
+// Kind of a catch-all structure for all types of expressions. Since it serves
+// multiple purposes, it needs to be checked in a specific order:
+//   - Check 1: err
+//   - Check 2: lhs + op + rhs, this is a binary expression
+//   - Check 3: op + rhs, this is a unary expression with an expression
+//   - Check 4: op + identifier, this is a unary expression with an identifier
+//   - Check 5: op + literal, this is a unary expression with a literal
+//   - Check 6: identifier, this is a plain identifier
+//   - Check 7: literal, this is a plain literal
 type expression struct {
+	err        error
 	lhs        *expression
 	rhs        *expression
 	op         *token
 	identifier *token
 	literal    *boolean
-	err        error
 }
 
 type evaluates interface {
