@@ -6,7 +6,7 @@ readme). Here's an example of it's reactive nature:
 
 ```
 $ bool
-> x = y ^ z
+> x = y ^ ¬z
 < ok
 
 > x
@@ -21,7 +21,7 @@ $ bool
 < ok
 
 > x
-= false
+= true
 
 > .quit
 < Goodbye
