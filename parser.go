@@ -98,8 +98,8 @@ func (p *parser) unary() expression {
 		if p.curr().id == eolTok {
 			expr.err = errors.New("Unexpected end of line.")
 		} else {
-			expr.err = fmt.Errorf("Invalid expression starting in position %d.",
-				p.curr().pos)
+			expr.err = fmt.Errorf("Invalid expression starting in position %d with character `%s`.",
+				p.curr().pos, p.curr().lexeme)
 		}
 	}
 
