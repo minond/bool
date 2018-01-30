@@ -36,28 +36,25 @@ type expression struct {
 }
 
 type evaluates interface {
-	eval(env environment) (boolean, error)
+	eval(env environment) (boolean, []error)
 }
 
-func (b binding) eval(env environment) (boolean, error) {
+func (b binding) eval(env environment) (boolean, []error) {
 	env.set(b.label.lexeme, b.value)
 	return boolean{}, nil
 }
 
-func (b expression) eval(env environment) (boolean, error) {
+func (b expression) eval(env environment) (boolean, []error) {
 	if b.err != nil {
-		return boolean{}, fmt.Errorf("Cannot evaluate expression due to error: %s", b.err)
+		return boolean{}, []error{fmt.Errorf("Cannot evaluate expression due to error: %s", b.err)}
 	} else if b.lhs != nil && b.op != nil && b.rhs != nil {
-		lhs, err := b.lhs.eval(env)
+		lhs, lhsErr := b.lhs.eval(env)
+		rhs, rhsErr := b.rhs.eval(env)
 
-		if err != nil {
-			return boolean{}, err
-		}
+		errs := append(lhsErr, rhsErr...)
 
-		rhs, err := b.rhs.eval(env)
-
-		if err != nil {
-			return boolean{}, err
+		if len(errs) > 0 {
+			return boolean{}, errs
 		}
 
 		switch b.op.id {
@@ -68,13 +65,13 @@ func (b expression) eval(env environment) (boolean, error) {
 			return boolean{lhs.internal || rhs.internal}, nil
 
 		default:
-			return boolean{}, fmt.Errorf("Unknown unary operator: %s", b.op.lexeme)
+			return boolean{}, []error{fmt.Errorf("Unknown unary operator: %s", b.op.lexeme)}
 		}
 	} else if b.op != nil && b.rhs != nil {
-		val, err := b.rhs.eval(env)
+		val, errs := b.rhs.eval(env)
 
-		if err != nil {
-			return boolean{}, err
+		if len(errs) > 0 {
+			return boolean{}, errs
 		}
 
 		switch b.op.id {
@@ -82,25 +79,25 @@ func (b expression) eval(env environment) (boolean, error) {
 			return boolean{!val.internal}, nil
 
 		default:
-			return boolean{}, fmt.Errorf("Unknown unary operator: %s", b.op.lexeme)
+			return boolean{}, []error{fmt.Errorf("Unknown unary operator: %s", b.op.lexeme)}
 		}
 	} else if b.identifier != nil {
 		val, set := env.get(b.identifier.lexeme)
 
 		if !set {
-			return boolean{}, fmt.Errorf("Undefined identifier `%s`",
-				b.identifier.lexeme)
+			return boolean{}, []error{fmt.Errorf("Undefined identifier `%s`",
+				b.identifier.lexeme)}
 		} else {
 			return val.eval(env)
 		}
 	} else if b.literal != nil {
 		return *b.literal, nil
 	} else {
-		return boolean{}, errors.New("Unimplemented evaluation path")
+		return boolean{}, []error{errors.New("Unimplemented evaluation path")}
 	}
 }
 
-func (b boolean) eval(env environment) (boolean, error) {
+func (b boolean) eval(env environment) (boolean, []error) {
 	return b, nil
 }
 

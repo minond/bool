@@ -117,11 +117,15 @@ func main() {
 					continue
 				}
 
-				ret, err := expr.eval(env)
+				ret, evalErrors := expr.eval(env)
 
-				if err != nil {
+				if len(evalErrors) > 0 {
 					fmt.Println("< error: Cannot evaluate expression due to errors:")
-					fmt.Printf("< error: %s\n", err)
+
+					for _, err := range evalErrors {
+						fmt.Printf("< error: %s\n", err)
+					}
+
 					fmt.Println()
 					continue
 				}

@@ -7,6 +7,7 @@ $ bool
 > x
 < error: Cannot evaluate expression due to errors:
 < error: Undefined identifier `y`
+< error: Undefined identifier `z`
 
 > y = true
 < ok
