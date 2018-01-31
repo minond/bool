@@ -20,11 +20,13 @@ const (
 	parseLine = "parse:"
 	evalLine  = "eval:"
 
-	setMode     = ".mode "
-	cmdMode     = ".mode"
-	cmdQuit     = ".quit"
+	setMode = ".mode "
+
 	cmdHelp     = ".help"
 	cmdKeyboard = ".keyboard"
+	cmdMode     = ".mode"
+	cmdQuit     = ".quit"
+	cmdReset    = ".reset"
 )
 
 func main() {
@@ -45,7 +47,12 @@ func main() {
 		case cmdMode:
 			fmt.Printf("< %s mode\n", mode)
 
+		case cmdReset:
+			fmt.Println("< clearing environment\n")
+			env = newEnvironment(nil)
+
 		case cmdHelp:
+			fmt.Printf("< %s: reset current environment.\n", cmdReset)
 			fmt.Printf("< %s: display or change evaluation mode to %s, %s, or %s.\n", cmdMode, scanMode, parseMode, evalMode)
 			fmt.Printf("< %s: print a keyboard with valid operations and their ascii representation.\n", cmdKeyboard)
 			fmt.Printf("< %s: view this help text.\n", cmdHelp)
