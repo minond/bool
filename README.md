@@ -1,8 +1,8 @@
-Bool is a reactive domain-specific language for Boolean Algebra. Download and
-install the `bool` binary using `go get github.com/minond/bool`. While a
-language, right now bool mostly lives in a repl and doesn't support external
-source. But that may be added in the future (see TODO's section in this
-readme). Here's an example of it's reactive nature:
+Bool is a reactive domain-specific language and environment for Boolean
+Algebra. Download and install the `bool` binary using `go get
+github.com/minond/bool`. While a language, right now bool mostly lives in a
+repl and doesn't support external source. But that may be added in the future
+(see TODO's section in this readme). Here's an example of it's reactive nature:
 
 ```
 $ bool
