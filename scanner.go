@@ -252,7 +252,7 @@ func isWhitespace(r rune) bool {
 }
 
 func isIdent(r rune) bool {
-	return r >= rune('a') && r <= rune('z')
+	return r >= rune('A') && r <= rune('z')
 }
 
 func not(f tokenFn) tokenFn {
