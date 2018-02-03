@@ -64,6 +64,10 @@ var (
 		xorRn:      xorTok,
 	}
 
+	opDict = map[string]tokenId{
+		"not": notTok,
+	}
+
 	keywordDict = map[string]tokenId{
 		"is":    bindTok,
 		"where": bindContTok,
@@ -168,6 +172,8 @@ func scan(raw string) []token {
 
 			if stringIsKeyword(str) {
 				add(getKeywordToken(str), str, nil)
+			} else if stringIsOp(str) {
+				add(getStrOpToken(str), str, nil)
 			} else if stringIsBoolean(str) {
 				add(getBoolToken(str), str, nil)
 			} else {
@@ -211,6 +217,16 @@ func getOpToken(r rune) tokenId {
 	}
 }
 
+func getStrOpToken(s string) tokenId {
+	tok, ok := opDict[s]
+
+	if !ok {
+		return invldTok
+	} else {
+		return tok
+	}
+}
+
 func getKeywordToken(s string) tokenId {
 	tok, ok := keywordDict[s]
 
@@ -233,6 +249,11 @@ func getBoolToken(s string) tokenId {
 
 func stringIsKeyword(s string) bool {
 	_, ok := keywordDict[s]
+	return ok
+}
+
+func stringIsOp(s string) bool {
+	_, ok := opDict[s]
 	return ok
 }
 

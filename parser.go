@@ -16,12 +16,11 @@ type parser struct {
       =============
       == Grammar ==
       =============
-
-BIN_OPERATOR = (* binary operators *)
-UNI_OPERATOR = (* unary operators *)
-LETTER       = 'a' | .. | 'z'
-DIGIT        = '0' | .. | '9'
-BOOLEAN      = "true" | "false" | "1" | "0"
+BIN_OPERATOR = "^" | "∧" | "=" | "≡" | ">" | "→" | "v" | "∨" | "*" | "⊕" ;
+UNI_OPERATOR = "¬" | "!" | "not" ;
+LETTER       = 'a' | .. | 'z' ;
+DIGIT        = '0' | .. | '9' ;
+BOOLEAN      = "true" | "false" | "1" | "0" ;
 
 MAIN         = { ["where"|"and"] binding | expression } ;
 
@@ -30,12 +29,12 @@ value        = "true" | "false" ;
 
 binding      = identifier "is" expression ;
 expression   = unary { BIN_OPERATOR unary } ;
-unary        = UNI_OPERATOR unary
+unary        = [ UNI_OPERATOR ] unary
              | primary ;
 
 primary      = BOOLEAN
              | identifier
-             | "(" expression ")"
+             | "(" expression ")" ;
 
 */
 func parse(tokens []token) (evaluates, []error) {
