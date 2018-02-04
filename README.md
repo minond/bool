@@ -49,25 +49,30 @@ are cool nonetheless.
 ## Language grammar
 
 ```ebnf
-grammar      = { statement };
-statement    = [ "where" | "and" ] binding | expression ;
+program        = { statement };
+statement      = [ "where" | "and" ] binding | expression ;
 
-binding      = identifier "is" expression ;
-expression   = unary { BIN_OPERATOR unary } ;
-unary        = [ UNI_OPERATOR ] unary
-             | primary ;
+binding        = identifier "is" expression ;
+expression     = unary { BIN_OPERATOR unary } ;
+unary          = [ UNI_OPERATOR ] unary
+               | primary ;
 
-primary      = BOOLEAN
-             | identifier
-             | "(" expression ")" ;
+(* gate-decl      = "gate" identifier "(" [ gate-decl-args ] ")" "=" expression ; *)
+(* gate-call      = identifier "(" [ gate-call-args ] ")" ; *)
+(* gate-decl-args = identifier { "," identifier } ; *)
+(* gate-call-args = expression { "," expression } ; *)
 
-identifier   = LETTER , { LETTER | DIGIT | "_" } ;
+primary        = BOOLEAN
+               | identifier
+               | "(" expression ")" ;
 
-BIN_OPERATOR = "^" | "∧" | "=" | "≡" | ">" | "→" | "v" | "∨" | "*" | "⊕" ;
-UNI_OPERATOR = "¬" | "!" | "not" ;
-LETTER       = "a" | .. | "z" ;
-DIGIT        = "0" | .. | "9" ;
-BOOLEAN      = "true" | "false" | "1" | "0" ;
+identifier     = LETTER , { LETTER | DIGIT | "_" } ;
+
+BIN_OPERATOR   = "^" | "∧" | "=" | "≡" | ">" | "→" | "v" | "∨" | "*" | "⊕" ;
+UNI_OPERATOR   = "¬" | "!" | "not" ;
+LETTER         = "a" | .. | "z" ;
+DIGIT          = "0" | .. | "9" ;
+BOOLEAN        = "true" | "false" | "1" | "0" ;
 ```
 
 ## TODO
