@@ -46,6 +46,14 @@ const (
 	spaceRn    = rune(' ')
 	xorAsciiRn = rune('*')
 	xorRn      = rune('⊕')
+
+	ucAch = rune('A')
+	ucZch = rune('Z')
+	lcAch = rune('a')
+	lcZch = rune('z')
+	chUs  = rune('_')
+	no0   = rune('0')
+	no9   = rune('9')
 )
 
 var (
@@ -167,7 +175,7 @@ func scan(raw string) []token {
 		} else if r == cparenRn {
 			add(cparenTok, ")", nil)
 		} else if isIdent(r) {
-			ident := readUntil(runes, i, isIdent)
+			ident := readUntil(runes, i, isIdentLike)
 			str := string(ident)
 
 			if stringIsKeyword(str) {
@@ -273,7 +281,16 @@ func isWhitespace(r rune) bool {
 }
 
 func isIdent(r rune) bool {
-	return r >= rune('A') && r <= rune('z')
+	return (r >= ucAch && r <= ucZch) ||
+		(r >= lcAch && r <= lcZch)
+}
+
+func isDigit(r rune) bool {
+	return r >= no0 && r <= no9
+}
+
+func isIdentLike(r rune) bool {
+	return r == chUs || isDigit(r) || isIdent(r)
 }
 
 func not(f tokenFn) tokenFn {

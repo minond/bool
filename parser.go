@@ -13,19 +13,8 @@ type parser struct {
 
 /*
 
-      =============
-      == Grammar ==
-      =============
-BIN_OPERATOR = "^" | "∧" | "=" | "≡" | ">" | "→" | "v" | "∨" | "*" | "⊕" ;
-UNI_OPERATOR = "¬" | "!" | "not" ;
-LETTER       = 'a' | .. | 'z' ;
-DIGIT        = '0' | .. | '9' ;
-BOOLEAN      = "true" | "false" | "1" | "0" ;
-
-MAIN         = { ["where"|"and"] binding | expression } ;
-
-identifier   = LETTER , { LETTER | DIGIT | "_" } ;
-value        = "true" | "false" ;
+grammar      = { statement };
+statement    = [ "where" | "and" ] binding | expression ;
 
 binding      = identifier "is" expression ;
 expression   = unary { BIN_OPERATOR unary } ;
@@ -35,6 +24,14 @@ unary        = [ UNI_OPERATOR ] unary
 primary      = BOOLEAN
              | identifier
              | "(" expression ")" ;
+
+identifier   = LETTER , { LETTER | DIGIT | "_" } ;
+
+BIN_OPERATOR = "^" | "∧" | "=" | "≡" | ">" | "→" | "v" | "∨" | "*" | "⊕" ;
+UNI_OPERATOR = "¬" | "!" | "not" ;
+LETTER       = "a" | .. | "z" ;
+DIGIT        = "0" | .. | "9" ;
+BOOLEAN      = "true" | "false" | "1" | "0" ;
 
 */
 func parse(tokens []token) (evaluates, []error) {
