@@ -46,6 +46,30 @@ modes are "parse" which displays an AST, and "scan" which displays all tokens
 before. These are mostly useful for debugging the parser and interpreter but
 are cool nonetheless.
 
+## Language grammar
+
+```ebnf
+grammar      = { statement };
+statement    = [ "where" | "and" ] binding | expression ;
+
+binding      = identifier "is" expression ;
+expression   = unary { BIN_OPERATOR unary } ;
+unary        = [ UNI_OPERATOR ] unary
+             | primary ;
+
+primary      = BOOLEAN
+             | identifier
+             | "(" expression ")" ;
+
+identifier   = LETTER , { LETTER | DIGIT | "_" } ;
+
+BIN_OPERATOR = "^" | "∧" | "=" | "≡" | ">" | "→" | "v" | "∨" | "*" | "⊕" ;
+UNI_OPERATOR = "¬" | "!" | "not" ;
+LETTER       = "a" | .. | "z" ;
+DIGIT        = "0" | .. | "9" ;
+BOOLEAN      = "true" | "false" | "1" | "0" ;
+```
+
 ## TODO
 
 - Read files and stdin as source.

@@ -11,29 +11,6 @@ type parser struct {
 	errs   []error
 }
 
-/*
-
-grammar      = { statement };
-statement    = [ "where" | "and" ] binding | expression ;
-
-binding      = identifier "is" expression ;
-expression   = unary { BIN_OPERATOR unary } ;
-unary        = [ UNI_OPERATOR ] unary
-             | primary ;
-
-primary      = BOOLEAN
-             | identifier
-             | "(" expression ")" ;
-
-identifier   = LETTER , { LETTER | DIGIT | "_" } ;
-
-BIN_OPERATOR = "^" | "∧" | "=" | "≡" | ">" | "→" | "v" | "∨" | "*" | "⊕" ;
-UNI_OPERATOR = "¬" | "!" | "not" ;
-LETTER       = "a" | .. | "z" ;
-DIGIT        = "0" | .. | "9" ;
-BOOLEAN      = "true" | "false" | "1" | "0" ;
-
-*/
 func parse(tokens []token) (evaluates, []error) {
 	par := parser{
 		pos:    0,
