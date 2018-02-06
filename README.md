@@ -7,25 +7,17 @@ repl and doesn't support external source. But that may be added in the future
 ```
 $ bool
 > x is y ∧ ¬z
-< ok
-
 > x
 < error: Cannot evaluate expression due to errors:
 < error: Undefined identifier `y`
 < error: Undefined identifier `z`
 
-> where y is true
-< ok
-
-> and z is false
-< ok
-
+> y is true
+> z is false
 > x
 = true
 
 > gate Xor (x, y) = (x ∨ y) ∧ ¬(x ∧ y)
-< ok
-
 > Xor(true, true)
 = false
 
@@ -64,17 +56,11 @@ can extend the scope values of a gate right after declaring it.
 
 ```text
 > x is true
-< ok
-
 > y is ¬x
-< ok
-
 > y
 = false
 
 > x is false
-< ok
-
 > y
 = true
 ```
