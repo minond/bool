@@ -147,8 +147,8 @@ func main() {
 				if isLocalBinding && prevGate != nil {
 					ret, evalErrors = expr.eval(*prevGate.env)
 				} else if isLocalBinding {
-					fmt.Println("< warning: binding continuation used outside of gate scope.")
-					ret, evalErrors = expr.eval(env)
+					fmt.Println("< error: binding continuation used outside of gate scope.\n")
+					continue
 				} else {
 					ret, evalErrors = expr.eval(env)
 				}
