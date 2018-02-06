@@ -23,7 +23,6 @@ $ bool
 > x
 = true
 
-
 > gate Xor (x, y) = (x v y) ^ ¬(x ^ y)
 < ok
 
