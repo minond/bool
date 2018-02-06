@@ -23,6 +23,16 @@ $ bool
 > x
 = true
 
+
+> gate Xor (x, y) = (x v y) ^ ¬(x ^ y)
+< ok
+
+> Xor(true, true)
+= false
+
+> Xor(true, false)
+= true
+
 > .quit
 < Goodbye
 ```
