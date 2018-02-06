@@ -143,8 +143,22 @@ func (b expression) eval(env environment) (boolean, []error) {
 		if !set {
 			return boolean{}, []error{fmt.Errorf("Undefined identifier `%s`",
 				b.identifier.lexeme)}
-		} else {
+		} else if b.identifier != val.identifier {
 			return val.eval(env)
+		} else if env.parent != nil {
+			// Ok, we're looking up a binding but when doing so we get back the
+			// same identifier as the one we looked up, so we're probably
+			// looking something up with the same name. If we keep looking for
+			// it using the current environment, we'll get stuck. Let's try
+			// looking it up in the parent environment instead. Note that this
+			// should always have a parent environment since we're most likely
+			// in a gate right now.
+			return val.eval(*env.parent)
+		} else {
+			return boolean{}, []error{fmt.Errorf(
+				"Internal error, detected a circular variable reference and "+
+					"expected a parent environment for lookup but none found "+
+					"for `%s` binding", b.identifier.lexeme)}
 		}
 	} else if b.literal != nil {
 		return *b.literal, nil
