@@ -16,6 +16,8 @@ const (
 	andTok      tokenId = "and"
 	bindContTok tokenId = "where"
 	bindTok     tokenId = "is"
+	cbrakTok    tokenId = "cbrak"
+	commaTok    tokenId = "comma"
 	cparenTok   tokenId = "cparen"
 	eolTok      tokenId = "eol"
 	eqTok       tokenId = "EQ"
@@ -25,6 +27,7 @@ const (
 	invldTok    tokenId = "invalid"
 	miTok       tokenId = "matimp"
 	notTok      tokenId = "not"
+	obrakTok    tokenId = "obrak"
 	oparenTok   tokenId = "oparen"
 	orTok       tokenId = "or"
 	trueTok     tokenId = "true"
@@ -32,6 +35,8 @@ const (
 
 	andAsciiRn = rune('^')
 	andRn      = rune('∧')
+	cbrakRn    = rune(']')
+	commaRn    = rune(',')
 	cparenRn   = rune(')')
 	eqAsciiRn  = rune('=')
 	eqRn       = rune('≡')
@@ -40,6 +45,7 @@ const (
 	nlRn       = rune('\n')
 	notAsciiRn = rune('!')
 	notRn      = rune('¬')
+	obrakRn    = rune('[')
 	oparenRn   = rune('(')
 	orAsciiRn  = rune('v')
 	orRn       = rune('∨')
@@ -116,6 +122,12 @@ func (t token) String() string {
 	case xorTok:
 		str = "XOR"
 
+	case obrakTok:
+		str = "OPEN-BRAKET"
+
+	case cbrakTok:
+		str = "CLOSE-BRAKET"
+
 	case oparenTok:
 		str = "OPEN-PAREN"
 
@@ -124,6 +136,9 @@ func (t token) String() string {
 
 	case miTok:
 		str = "MATERIAL-IMPLICATION"
+
+	case commaTok:
+		str = "COMMA"
 
 	case identTok:
 		str = fmt.Sprintf("ID(%s)", t.lexeme)
@@ -174,8 +189,14 @@ func scan(raw string) []token {
 			add(oparenTok, "(", nil)
 		} else if r == cparenRn {
 			add(cparenTok, ")", nil)
+		} else if r == obrakRn {
+			add(obrakTok, "[", nil)
+		} else if r == cbrakRn {
+			add(cbrakTok, "]", nil)
+		} else if r == commaRn {
+			add(commaTok, ",", nil)
 		} else if isIdent(r) {
-			ident := readUntil(runes, i, isIdentLike)
+			ident := readWhile(runes, i, isIdentLike)
 			str := string(ident)
 
 			if stringIsKeyword(str) {
@@ -190,7 +211,7 @@ func scan(raw string) []token {
 
 			i += len(ident) - 1
 		} else {
-			word := readUntil(runes, i, not(isWhitespace))
+			word := readWhile(runes, i, isDigit)
 			str := string(word)
 
 			if stringIsBoolean(str) {
@@ -299,7 +320,31 @@ func not(f tokenFn) tokenFn {
 	}
 }
 
-func readUntil(runes []rune, pos int, f tokenFn) []rune {
+func or(fs ...tokenFn) tokenFn {
+	return func(r rune) bool {
+		for _, f := range fs {
+			if f(r) {
+				return true
+			}
+		}
+
+		return false
+	}
+}
+
+func is(rs ...rune) tokenFn {
+	return func(r rune) bool {
+		for _, q := range rs {
+			if r == q {
+				return true
+			}
+		}
+
+		return false
+	}
+}
+
+func readWhile(runes []rune, pos int, f tokenFn) []rune {
 	var buff []rune
 	max := len(runes)
 
