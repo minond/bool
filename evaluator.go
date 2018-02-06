@@ -117,6 +117,26 @@ func (b expression) eval(env environment) (boolean, []error) {
 		}
 	} else if b.lhs != nil {
 		return b.lhs.eval(env)
+	} else if b.identifier != nil && b.call {
+		gate, set := env.getGate(b.identifier.lexeme)
+
+		if !set {
+			return boolean{}, []error{fmt.Errorf("Undefined gate `%s`",
+				b.identifier.lexeme)}
+		} else {
+			if len(gate.args) != len(b.args) {
+				return boolean{}, []error{fmt.Errorf("Arity error, `%s` expects %d arguments but got %d instead.",
+					b.identifier.lexeme, len(gate.args), len(b.args))}
+			}
+
+			subEnv := newEnvironment(&env)
+
+			for i, arg := range gate.args {
+				subEnv.setBinding(arg.lexeme, b.args[i])
+			}
+
+			return gate.body.eval(subEnv)
+		}
 	} else if b.identifier != nil {
 		val, set := env.getBinding(b.identifier.lexeme)
 
@@ -139,7 +159,12 @@ func (b boolean) eval(env environment) (boolean, []error) {
 
 func (e *environment) getBinding(label string) (expression, bool) {
 	val, ok := e.bindings[label]
-	return val, ok
+
+	if !ok && e.parent != nil {
+		return e.parent.getBinding(label)
+	} else {
+		return val, ok
+	}
 }
 
 func (e *environment) setBinding(label string, expr expression) *environment {
@@ -149,7 +174,12 @@ func (e *environment) setBinding(label string, expr expression) *environment {
 
 func (e *environment) getGate(label string) (gate, bool) {
 	val, ok := e.gates[label]
-	return val, ok
+
+	if !ok && e.parent != nil {
+		return e.parent.getGate(label)
+	} else {
+		return val, ok
+	}
 }
 
 func (e *environment) setGate(label string, g gate) *environment {
