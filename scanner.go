@@ -23,6 +23,7 @@ const (
 	eqTok       tokenId = "EQ"
 	errTok      tokenId = "err"
 	falseTok    tokenId = "false"
+	gateTok     tokenId = "gate"
 	identTok    tokenId = "id"
 	invldTok    tokenId = "invalid"
 	miTok       tokenId = "matimp"
@@ -83,9 +84,10 @@ var (
 	}
 
 	keywordDict = map[string]tokenId{
+		"and":   bindContTok,
+		"gate":  gateTok,
 		"is":    bindTok,
 		"where": bindContTok,
-		"and":   bindContTok,
 	}
 
 	boolDict = map[string]tokenId{
@@ -145,6 +147,9 @@ func (t token) String() string {
 
 	case bindContTok:
 		str = "WHERE"
+
+	case gateTok:
+		str = "GATE"
 
 	case bindTok:
 		str = "BIND"
