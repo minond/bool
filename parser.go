@@ -28,7 +28,7 @@ func parse(tokens []token) (evaluates, []error) {
 	case binding:
 		errs = append(errs, v.value.errors()...)
 
-	case gate:
+	case *gate:
 		errs = append(errs, v.body.errors()...)
 	}
 
@@ -72,8 +72,9 @@ func (p *parser) binding() binding {
 	}
 }
 
-func (p *parser) gateDecl() gate {
-	g := gate{}
+func (p *parser) gateDecl() *gate {
+	g := &gate{}
+	g.env = nil
 
 	if p.expect(identTok) != nil {
 		p.errs = append(p.errs, errors.New("Expecting a gate label."))

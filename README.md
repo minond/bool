@@ -92,5 +92,5 @@ BOOLEAN        = "true" | "false" | "1" | "0" ;
 - Read files and stdin as source.
 - Add feature to print truth tables.
 - Print prettier ASTs.
-- Use "where"/"and" keywords as scoping rules.
+- Move logic from main into a proper runtime.
 - Ummm, tests.

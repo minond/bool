@@ -24,6 +24,7 @@ type gate struct {
 	label token
 	args  []token
 	body  expression
+	env   *environment
 }
 
 // Kind of a catch-all structure for all types of expressions. Since it serves
@@ -63,8 +64,8 @@ func (b binding) eval(env environment) (boolean, []error) {
 	return boolean{}, nil
 }
 
-func (g gate) eval(env environment) (boolean, []error) {
-	env.setGate(g.label.lexeme, g)
+func (g *gate) eval(env environment) (boolean, []error) {
+	env.setGate(g.label.lexeme, *g)
 	return boolean{}, nil
 }
 
@@ -135,7 +136,11 @@ func (b expression) eval(env environment) (boolean, []error) {
 					b.identifier.lexeme, len(gate.args), len(b.args))}
 			}
 
-			subEnv := newEnvironment(&env)
+			gate.env.parent = &env
+			subEnv := newEnvironment(gate.env)
+			defer func() {
+				gate.env.parent = nil
+			}()
 
 			for i, arg := range gate.args {
 				subEnv.setBinding(arg.lexeme, b.args[i])

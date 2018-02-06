@@ -30,6 +30,8 @@ const (
 )
 
 func main() {
+	var prevGate *gate
+
 	reader := bufio.NewReader(os.Stdin)
 	env := newEnvironment(nil)
 	mode := evalMode
@@ -100,8 +102,14 @@ func main() {
 				//
 				//   2. A lot of the error checking and printing should be in a
 				//   separate function so main doesn't get messy.
+				//
+				//   3. I'm making this a little worse with the whole local to
+				//   gate only bindings here. Where should this live? I'm some
+				//   sort of "runtime" is needed for this type of thing.
 				isBindingOrGate := false
-				expr, parseErrors := parse(scan(strings.TrimPrefix(text, evalLine)))
+				isLocalBinding := false
+				toks := scan(strings.TrimPrefix(text, evalLine))
+				expr, parseErrors := parse(toks)
 
 				if len(parseErrors) > 0 {
 					fmt.Println("< error: Cannot parse expression due to errors:")
@@ -114,15 +122,36 @@ func main() {
 					continue
 				}
 
-				switch expr.(type) {
+				switch v := expr.(type) {
 				case binding:
 					isBindingOrGate = true
+					isLocalBinding = toks[0].id == bindContTok
 
-				case gate:
+					if !isLocalBinding {
+						prevGate = nil
+					}
+
+				case *gate:
+					prevGate = v
+					newEnv := newEnvironment(&env)
+					v.env = &newEnv
 					isBindingOrGate = true
+
+				default:
+					prevGate = nil
 				}
 
-				ret, evalErrors := expr.eval(env)
+				var ret boolean
+				var evalErrors []error
+
+				if isLocalBinding && prevGate != nil {
+					ret, evalErrors = expr.eval(*prevGate.env)
+				} else if isLocalBinding {
+					fmt.Println("< warning: binding continuation used outside of gate scope.")
+					ret, evalErrors = expr.eval(env)
+				} else {
+					ret, evalErrors = expr.eval(env)
+				}
 
 				if len(evalErrors) > 0 {
 					fmt.Println("< error: Cannot evaluate expression due to errors:")
