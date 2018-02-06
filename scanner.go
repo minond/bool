@@ -306,7 +306,13 @@ func isDigit(r rune) bool {
 }
 
 func isIdentLike(r rune) bool {
-	return r != oparenRn && r != cparenRn && !isWhitespace(r) && !isOp(r)
+	return r != commaRn &&
+		r != oparenRn &&
+		r != cparenRn &&
+		r != obrakRn &&
+		r != cbrakRn &&
+		!isWhitespace(r) &&
+		!isOp(r)
 }
 
 func not(f tokenFn) tokenFn {
