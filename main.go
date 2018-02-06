@@ -59,6 +59,7 @@ func main() {
 			fmt.Printf("< %s: print a keyboard with valid operations and their ascii representation.\n", cmdKeyboard)
 			fmt.Printf("< %s: view this help text.\n", cmdHelp)
 			fmt.Printf("< %s: exit program.\n", cmdQuit)
+			fmt.Println()
 
 		case cmdKeyboard:
 			fmt.Printf("< conjunction: %s or %s\n", string(andRn), string(andAsciiRn))
@@ -67,6 +68,7 @@ func main() {
 			fmt.Printf("< exclusive or: %s or %s\n", string(xorRn), string(xorAsciiRn))
 			fmt.Printf("< equivalence: %s or %s\n", string(eqRn), string(eqAsciiRn))
 			fmt.Printf("< material implication: %s or %s\n", string(miRn), string(miAsciiRn))
+			fmt.Println()
 
 		default:
 			if text == "" {
