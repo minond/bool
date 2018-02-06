@@ -93,3 +93,4 @@ BOOLEAN        = "true" | "false" | "1" | "0" ;
 - Add feature to print truth tables.
 - Print prettier ASTs.
 - Use "where"/"and" keywords as scoping rules.
+- Ummm, tests.
