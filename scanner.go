@@ -54,13 +54,8 @@ const (
 	xorAsciiRn = rune('*')
 	xorRn      = rune('⊕')
 
-	ucAch = rune('A')
-	ucZch = rune('Z')
-	lcAch = rune('a')
-	lcZch = rune('z')
-	chUs  = rune('_')
-	no0   = rune('0')
-	no9   = rune('9')
+	no0 = rune('0')
+	no9 = rune('9')
 )
 
 var (
@@ -200,7 +195,18 @@ func scan(raw string) []token {
 			add(cbrakTok, "]", nil)
 		} else if r == commaRn {
 			add(commaTok, ",", nil)
-		} else if isIdent(r) {
+		} else if isDigit(r) {
+			word := readWhile(runes, i, isDigit)
+			str := string(word)
+
+			if stringIsBoolean(str) {
+				add(getBoolToken(str), str, nil)
+			} else {
+				add(errTok, str, fmt.Errorf("Unknown word: `%s`", str))
+			}
+
+			i += len(word) - 1
+		} else {
 			ident := readWhile(runes, i, isIdentLike)
 			str := string(ident)
 
@@ -215,17 +221,6 @@ func scan(raw string) []token {
 			}
 
 			i += len(ident) - 1
-		} else {
-			word := readWhile(runes, i, isDigit)
-			str := string(word)
-
-			if stringIsBoolean(str) {
-				add(getBoolToken(str), str, nil)
-			} else {
-				add(errTok, str, fmt.Errorf("unknown word: `%s`", str))
-			}
-
-			i += len(word) - 1
 		}
 	}
 
@@ -306,17 +301,12 @@ func isWhitespace(r rune) bool {
 		r == nlRn
 }
 
-func isIdent(r rune) bool {
-	return (r >= ucAch && r <= ucZch) ||
-		(r >= lcAch && r <= lcZch)
-}
-
 func isDigit(r rune) bool {
 	return r >= no0 && r <= no9
 }
 
 func isIdentLike(r rune) bool {
-	return r == chUs || isDigit(r) || isIdent(r)
+	return r != oparenRn && r != cparenRn && !isWhitespace(r) && !isOp(r)
 }
 
 func not(f tokenFn) tokenFn {
