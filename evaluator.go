@@ -53,7 +53,8 @@ type evaluates interface {
 func (b binding) eval(env environment) (boolean, []error) {
 	for _, id := range b.value.identifiers(env) {
 		if id.lexeme == b.label.lexeme {
-			return boolean{}, []error{fmt.Errorf("Detected circular reference in `%s` identifier",
+			return boolean{}, []error{fmt.Errorf(
+				"Detected circular reference in `%s` identifier",
 				b.label.lexeme)}
 		}
 	}
@@ -69,7 +70,9 @@ func (g gate) eval(env environment) (boolean, []error) {
 
 func (b expression) eval(env environment) (boolean, []error) {
 	if b.err != nil {
-		return boolean{}, []error{fmt.Errorf("Cannot evaluate expression due to error: %s", b.err)}
+		return boolean{}, []error{fmt.Errorf(
+			"Cannot evaluate expression due to error: %s",
+			b.err)}
 	} else if b.lhs != nil && b.op != nil && b.rhs != nil {
 		lhs, lhsErr := b.lhs.eval(env)
 		rhs, rhsErr := b.rhs.eval(env)
@@ -99,7 +102,8 @@ func (b expression) eval(env environment) (boolean, []error) {
 			return boolean{lhs.internal == rhs.internal}, nil
 
 		default:
-			return boolean{}, []error{fmt.Errorf("Unknown unary operator: %s", b.op.lexeme)}
+			return boolean{}, []error{fmt.Errorf("Unknown unary operator: %s",
+				b.op.lexeme)}
 		}
 	} else if b.op != nil && b.rhs != nil {
 		val, errs := b.rhs.eval(env)
@@ -113,7 +117,8 @@ func (b expression) eval(env environment) (boolean, []error) {
 			return boolean{!val.internal}, nil
 
 		default:
-			return boolean{}, []error{fmt.Errorf("Unknown unary operator: %s", b.op.lexeme)}
+			return boolean{}, []error{fmt.Errorf("Unknown unary operator: %s",
+				b.op.lexeme)}
 		}
 	} else if b.lhs != nil {
 		return b.lhs.eval(env)
@@ -125,7 +130,8 @@ func (b expression) eval(env environment) (boolean, []error) {
 				b.identifier.lexeme)}
 		} else {
 			if len(gate.args) != len(b.args) {
-				return boolean{}, []error{fmt.Errorf("Arity error, `%s` expects %d arguments but got %d instead.",
+				return boolean{}, []error{fmt.Errorf("Arity error, `%s` "+
+					"expects %d arguments but got %d instead.",
 					b.identifier.lexeme, len(gate.args), len(b.args))}
 			}
 

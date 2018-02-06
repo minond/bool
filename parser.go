@@ -44,7 +44,8 @@ func (p *parser) main() evaluates {
 		expr := p.expression()
 
 		if !p.done() {
-			p.errs = append(p.errs, fmt.Errorf("Unexpected word a position %d `%s`",
+			p.errs = append(p.errs, fmt.Errorf(
+				"Unexpected word a position %d `%s`",
 				p.curr().pos, p.curr().lexeme))
 		}
 
@@ -82,22 +83,25 @@ func (p *parser) gateDecl() gate {
 	g.label = p.prev()
 
 	if p.expect(oparenTok) != nil {
-		p.errs = append(p.errs, errors.New("Expecting an open paren after the gate label."))
+		p.errs = append(p.errs, errors.New(
+			"Expecting an open paren after the gate label."))
 		return g
 	}
 
 	if p.curr().id == identTok {
 		for {
 			if !p.match(identTok) {
-				p.errs = append(p.errs,
-					fmt.Errorf("Expecting an identifier in position %d but found %s instead.", p.curr().pos, p.curr()))
+				p.errs = append(p.errs, fmt.Errorf("Expecting an identifier "+
+					"in position %d but found %s instead.",
+					p.curr().pos, p.curr()))
 			}
 
 			g.args = append(g.args, p.prev())
 
 			if p.match(identTok) {
-				p.errs = append(p.errs,
-					fmt.Errorf("Expecting a comma to separate gate arguments. Found identity in position %d instead.", p.prev().pos))
+				p.errs = append(p.errs, fmt.Errorf("Expecting a comma to "+
+					"separate gate arguments. Found identity in position %d "+
+					"instead.", p.prev().pos))
 				return g
 			}
 
@@ -108,14 +112,16 @@ func (p *parser) gateDecl() gate {
 	}
 
 	if p.expect(cparenTok) != nil {
-		p.errs = append(p.errs, fmt.Errorf("Expecting a close paren after the gate arguments but found %s in position %d instead..",
-			p.curr(), p.curr().pos))
+		p.errs = append(p.errs, fmt.Errorf(
+			"Expecting a close paren after the gate arguments but found %s "+
+				"in position %d instead..", p.curr(), p.curr().pos))
 		return g
 	}
 
 	if p.expect(eqTok) != nil {
-		p.errs = append(p.errs, fmt.Errorf("Expecting an equal sign after gate arguments but found %s in position %d instead.",
-			p.curr(), p.curr().pos))
+		p.errs = append(p.errs, fmt.Errorf(
+			"Expecting an equal sign after gate arguments but found %s in "+
+				"position %d instead.", p.curr(), p.curr().pos))
 		return g
 	}
 
@@ -179,7 +185,8 @@ func (p *parser) unary() expression {
 				if p.match(cparenTok) {
 					break
 				} else {
-					expr.err = fmt.Errorf("Expecting a closing paren but found %s in position %d instead.",
+					expr.err = fmt.Errorf(
+						"Expecting a closing paren but found %s in position %d instead.",
 						p.curr(), p.curr().pos)
 				}
 			}
@@ -199,7 +206,8 @@ func (p *parser) unary() expression {
 	} else if p.curr().id == eolTok {
 		expr.err = errors.New("Unexpected end of line.")
 	} else {
-		expr.err = fmt.Errorf("Invalid expression starting in position %d with character `%s`.",
+		expr.err = fmt.Errorf(
+			"Invalid expression starting in position %d with character `%s`.",
 			p.curr().pos, p.curr().lexeme)
 	}
 
