@@ -106,8 +106,9 @@ func main() {
 				//   3. I'm making this a little worse with the whole local to
 				//   gate only bindings here. Where should this live? I'm some
 				//   sort of "runtime" is needed for this type of thing.
-				isBindingOrGate := false
-				isLocalBinding := false
+				isExpr := false
+				isLocal := false
+
 				toks := scan(strings.TrimPrefix(text, evalLine))
 				expr, parseErrors := parse(toks)
 
@@ -124,10 +125,9 @@ func main() {
 
 				switch v := expr.(type) {
 				case binding:
-					isBindingOrGate = true
-					isLocalBinding = toks[0].id == bindContTok
+					isLocal = toks[0].id == bindContTok
 
-					if !isLocalBinding {
+					if !isLocal {
 						prevGate = nil
 					}
 
@@ -135,18 +135,18 @@ func main() {
 					prevGate = v
 					newEnv := newEnvironment(&env)
 					v.env = &newEnv
-					isBindingOrGate = true
 
 				default:
 					prevGate = nil
+					isExpr = true
 				}
 
 				var ret boolean
 				var evalErrors []error
 
-				if isLocalBinding && prevGate != nil {
+				if isLocal && prevGate != nil {
 					ret, evalErrors = expr.eval(*prevGate.env)
-				} else if isLocalBinding {
+				} else if isLocal {
 					fmt.Println("< error: binding continuation used outside of gate scope.\n")
 					continue
 				} else {
@@ -164,14 +164,10 @@ func main() {
 					continue
 				}
 
-				if isBindingOrGate {
-					fmt.Println("< ok")
-				} else {
-					fmt.Printf("= %t\n", ret.internal)
+				if isExpr {
+					fmt.Printf("= %t\n\n", ret.internal)
 				}
 			}
 		}
-
-		fmt.Print("\n")
 	}
 }
