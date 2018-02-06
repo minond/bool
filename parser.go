@@ -154,6 +154,36 @@ func (p *parser) unary() expression {
 		// unary = primary = identifier
 		tok := cloneToken(p.prev())
 		expr.identifier = &tok
+
+		// unary = primary = gate-call
+		if p.match(oparenTok) {
+			expr.call = true
+
+			// This is matching id(arg,) since getting to the command restarts
+			// and immediatelly ends because of the !p.match(cparenTok). Maybe
+			// this is ok. Maybe it's not. Just noting it here.
+			for !p.match(cparenTok) {
+				arg := p.expression()
+
+				if arg.err != nil {
+					expr.err = arg.err
+					return expr
+				}
+
+				expr.args = append(expr.args, arg)
+
+				if p.match(commaTok) {
+					continue
+				}
+
+				if p.match(cparenTok) {
+					break
+				} else {
+					expr.err = fmt.Errorf("Expecting a closing paren but found %s in position %d instead.",
+						p.curr(), p.curr().pos)
+				}
+			}
+		}
 	} else if p.match(trueTok, falseTok) {
 		// unary = primary = BOOLEAN
 		if p.prev().id == trueTok {
