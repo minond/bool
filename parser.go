@@ -86,15 +86,36 @@ func (p *parser) gateDecl() gate {
 		return g
 	}
 
-	// XXX args here
+	if p.curr().id == identTok {
+		for {
+			if !p.match(identTok) {
+				p.errs = append(p.errs,
+					fmt.Errorf("Expecting an identifier in position %d but found %s instead.", p.curr().pos, p.curr()))
+			}
+
+			g.args = append(g.args, p.prev())
+
+			if p.match(identTok) {
+				p.errs = append(p.errs,
+					fmt.Errorf("Expecting a comma to separate gate arguments. Found identity in position %d instead.", p.prev().pos))
+				return g
+			}
+
+			if !p.match(commaTok) {
+				break
+			}
+		}
+	}
 
 	if p.expect(cparenTok) != nil {
-		p.errs = append(p.errs, errors.New("Expecting a close paren after the gate arguments."))
+		p.errs = append(p.errs, fmt.Errorf("Expecting a close paren after the gate arguments but found %s in position %d instead..",
+			p.curr(), p.curr().pos))
 		return g
 	}
 
 	if p.expect(eqTok) != nil {
-		p.errs = append(p.errs, errors.New("Expecting an equal sign after gate arguments."))
+		p.errs = append(p.errs, fmt.Errorf("Expecting an equal sign after gate arguments but found %s in position %d instead.",
+			p.curr(), p.curr().pos))
 		return g
 	}
 
