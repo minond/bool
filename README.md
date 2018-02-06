@@ -55,7 +55,7 @@ modes are "parse" which displays an AST, and "scan" which displays all tokens
 before. These are mostly useful for debugging the parser and interpreter but
 are cool nonetheless.
 
-## Language grammar
+## Language
 
 ```ebnf
 program        = { statement };
@@ -92,3 +92,4 @@ BOOLEAN        = "true" | "false" | "1" | "0" ;
 - Read files and stdin as source.
 - Add feature to print truth tables.
 - Print prettier ASTs.
+- Use "where"/"and" keywords as scoping rules.
