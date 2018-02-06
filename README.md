@@ -6,7 +6,7 @@ repl and doesn't support external source. But that may be added in the future
 
 ```
 $ bool
-> x is y ^ ¬z
+> x is y ∧ ¬z
 < ok
 
 > x
@@ -23,7 +23,7 @@ $ bool
 > x
 = true
 
-> gate Xor (x, y) = (x v y) ^ ¬(x ^ y)
+> gate Xor (x, y) = (x ∨ y) ∧ ¬(x ∧ y)
 < ok
 
 > Xor(true, true)
@@ -56,6 +56,44 @@ before. These are mostly useful for debugging the parser and interpreter but
 are cool nonetheless.
 
 ## Language
+
+The language is pretty straightforward with some minor exceptions: functions
+are called gates, variable binding is done with an "is" keyword sice "=" is
+used for equality, and gate bodies are limited to a single expression _but_ you
+can extend the scope values of a gate right after declaring it.
+
+```text
+> x is true
+< ok
+
+> y is ¬x
+< ok
+
+> y
+= false
+
+> x is false
+< ok
+
+> y
+= true
+```
+
+Here we bind `x` to `true` and `y` to the inverse of `x`, `false`. We can later
+update `x` to be `false` and re-evaluate `y` to see the correct answer of
+`true`.
+
+```text
+gate Mux (a, b, x) = oa ∨ ob
+  where nx is ¬x
+    and oa is a ∧ nx
+    and ob is b ∧ x
+```
+
+Here we create a gate called `Mux` which is technically just the evaluation of
+`oa ∨ ob`. `oa` and `ob` are expressions that we bind using the "where" and
+"and" keywords, or binding continuations, thus making them private to `Mux`.
+Binding continuations outside of gate declarations result in an error.
 
 ```ebnf
 program        = { statement };
