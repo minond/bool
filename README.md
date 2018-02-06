@@ -81,6 +81,23 @@ Here we create a gate called `Mux` which is technically just the evaluation of
 "and" keywords, or binding continuations, thus making them private to `Mux`.
 Binding continuations outside of gate declarations result in an error.
 
+```text
+gate OneBitAdderSum (a, b, c) = sum
+  where xab is a ⊕ b
+    and sum is xab ⊕ c
+
+gate OneBitAdderCarry (a, b, c) = carry
+  where ab is a ∧ b
+    and ac is a ∧ c
+    and bc is b ∧ c
+    and carry is ab ∨ ac ∨ bc
+```
+
+Here we're introduced to one of Bool's limitation at the moment which is that
+we have only one data type (booleans) and no way to return multiple values from
+a gate. Perhaps arrays will be introduced to the language allowing us to do
+something like `gate OneBitAdder (a, b, c) = [carry, sum]` instead.
+
 ```ebnf
 program        = { statement };
 statement      = binding
@@ -117,4 +134,5 @@ BOOLEAN        = "true" | "false" | "1" | "0" ;
 - Add feature to print truth tables.
 - Print prettier ASTs.
 - Move logic from main into a proper runtime.
+- Arrays.
 - Ummm, tests.
