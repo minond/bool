@@ -27,16 +27,18 @@ func parse(tokens []token) (evaluates, []error) {
 
 	case binding:
 		errs = append(errs, v.value.errors()...)
+
+	case gate:
+		errs = append(errs, v.body.errors()...)
 	}
 
 	return expr, errs
 }
 
 func (p *parser) main() evaluates {
-	if p.match(bindContTok) {
-		// We have to be a binding here
-		return p.binding()
-	} else if p.curr().id == identTok && p.peek().id == bindTok {
+	if p.match(gateTok) {
+		return p.gateDecl()
+	} else if p.match(bindContTok) || (p.curr().id == identTok && p.peek().id == bindTok) {
 		return p.binding()
 	} else {
 		expr := p.expression()
@@ -53,14 +55,52 @@ func (p *parser) main() evaluates {
 func (p *parser) binding() binding {
 	label := p.curr()
 
-	// TODO Store these errors
-	p.expect(identTok)
-	p.expect(bindTok)
+	if p.expect(identTok) != nil {
+		p.errs = append(p.errs, errors.New("Expecting a binding label."))
+		return binding{}
+	}
+
+	if p.expect(bindTok) != nil {
+		p.errs = append(p.errs, errors.New("Expecting `is` keyword."))
+		return binding{}
+	}
 
 	return binding{
 		label: label,
 		value: p.expression(),
 	}
+}
+
+func (p *parser) gateDecl() gate {
+	g := gate{}
+
+	if p.expect(identTok) != nil {
+		p.errs = append(p.errs, errors.New("Expecting a gate label."))
+		return g
+	}
+
+	g.label = p.prev()
+
+	if p.expect(oparenTok) != nil {
+		p.errs = append(p.errs, errors.New("Expecting an open paren after the gate label."))
+		return g
+	}
+
+	// XXX args here
+
+	if p.expect(cparenTok) != nil {
+		p.errs = append(p.errs, errors.New("Expecting a close paren after the gate arguments."))
+		return g
+	}
+
+	if p.expect(eqTok) != nil {
+		p.errs = append(p.errs, errors.New("Expecting an equal sign after gate arguments."))
+		return g
+	}
+
+	g.body = p.expression()
+
+	return g
 }
 
 func (p *parser) expression() expression {
@@ -117,7 +157,7 @@ func (p *parser) unary() expression {
 
 func (p *parser) expect(ids ...tokenId) error {
 	if !p.match(ids...) {
-		return fmt.Errorf("Expecting one of the following tokens [%v] but found %s",
+		return fmt.Errorf("Expecting one of the following tokens %v but found %s",
 			ids, p.curr().id)
 	}
 

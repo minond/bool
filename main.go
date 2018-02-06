@@ -100,7 +100,7 @@ func main() {
 				//
 				//   2. A lot of the error checking and printing should be in a
 				//   separate function so main doesn't get messy.
-				isBinding := false
+				isBindingOrGate := false
 				expr, parseErrors := parse(scan(strings.TrimPrefix(text, evalLine)))
 
 				if len(parseErrors) > 0 {
@@ -116,7 +116,10 @@ func main() {
 
 				switch expr.(type) {
 				case binding:
-					isBinding = true
+					isBindingOrGate = true
+
+				case gate:
+					isBindingOrGate = true
 				}
 
 				ret, evalErrors := expr.eval(env)
@@ -132,7 +135,7 @@ func main() {
 					continue
 				}
 
-				if isBinding {
+				if isBindingOrGate {
 					fmt.Println("< ok")
 				} else {
 					fmt.Printf("= %t\n", ret.internal)
