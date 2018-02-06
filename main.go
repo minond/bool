@@ -81,13 +81,13 @@ func main() {
 				case evalMode:
 					mode = evalMode
 				default:
-					fmt.Printf("< error: Invalid mode `%s`\n", maybeMode)
+					fmt.Printf("< error: Invalid mode `%s`\n\n", maybeMode)
 					continue
 				}
 
 				fmt.Printf("< switching to %s mode\n", mode)
 			} else if strings.HasPrefix(text, ".") {
-				fmt.Printf("< error: Unknown command: `%s`. Enter `.help` for help.\n", text)
+				fmt.Printf("< error: Unknown command: `%s`. Enter `.help` for help.\n\n", text)
 			} else if mode == scanMode || strings.HasPrefix(text, scanLine) {
 				for _, t := range scan(strings.TrimPrefix(text, scanLine)) {
 					fmt.Printf("< %04d %s\n", t.pos, t)
@@ -147,7 +147,7 @@ func main() {
 				if isLocal && prevGate != nil {
 					ret, evalErrors = expr.eval(*prevGate.env)
 				} else if isLocal {
-					fmt.Println("< error: binding continuation used outside of gate scope.\n")
+					fmt.Println("< error: Binding continuation used outside of gate scope.\n")
 					continue
 				} else {
 					ret, evalErrors = expr.eval(env)
