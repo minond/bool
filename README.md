@@ -50,20 +50,23 @@ are cool nonetheless.
 
 ```ebnf
 program        = { statement };
-statement      = [ "where" | "and" ] binding | expression ;
+statement      = binding
+               | gate-decl
+               | expression ;
 
-binding        = identifier "is" expression ;
+gate-decl      = "gate" identifier "(" [ gate-decl-args ] ")" "=" expression ;
+gate-decl-args = identifier { "," identifier } ;
+gate-call      = identifier "(" [ gate-call-args ] ")" ;
+gate-call-args = expression { "," expression } ;
+
+binding        = [ "where" | "and" ] identifier "is" expression ;
 expression     = unary { BIN_OPERATOR unary } ;
 unary          = [ UNI_OPERATOR ] unary
                | primary ;
 
-(* gate-decl      = "gate" identifier "(" [ gate-decl-args ] ")" "=" expression ; *)
-(* gate-call      = identifier "(" [ gate-call-args ] ")" ; *)
-(* gate-decl-args = identifier { "," identifier } ; *)
-(* gate-call-args = expression { "," expression } ; *)
-
 primary        = BOOLEAN
                | identifier
+               | gate-call
                | "(" expression ")" ;
 
 identifier     = LETTER , { LETTER | DIGIT | "_" } ;

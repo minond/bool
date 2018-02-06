@@ -7,6 +7,7 @@ import (
 
 type environment struct {
 	bindings map[string]expression
+	gates    map[string]gate
 	parent   *environment
 }
 
@@ -19,20 +20,29 @@ type binding struct {
 	value expression
 }
 
+type gate struct {
+	label token
+	args  []token
+	body  expression
+}
+
 // Kind of a catch-all structure for all types of expressions. Since it serves
 // multiple purposes, it needs to be checked in a specific order:
 //   - Check 1: err
 //   - Check 2: lhs + op + rhs, this is a binary expression
 //   - Check 3: op + rhs, this is a unary expression with an expression
 //   - Check 3: lhs, this is a grouped expression
-//   - Check 4: identifier, this is a plain identifier
-//   - Check 5: literal, this is a plain literal
+//   - Check 4: identifier + call, this is a gate call
+//   - Check 5: identifier, this is a plain identifier
+//   - Check 6: literal, this is a plain literal
 type expression struct {
 	err        error
 	lhs        *expression
 	rhs        *expression
 	op         *token
 	identifier *token
+	call       bool
+	args       []expression
 	literal    *boolean
 }
 
@@ -48,7 +58,12 @@ func (b binding) eval(env environment) (boolean, []error) {
 		}
 	}
 
-	env.set(b.label.lexeme, b.value)
+	env.setBinding(b.label.lexeme, b.value)
+	return boolean{}, nil
+}
+
+func (g gate) eval(env environment) (boolean, []error) {
+	env.setGate(g.label.lexeme, g)
 	return boolean{}, nil
 }
 
@@ -103,7 +118,7 @@ func (b expression) eval(env environment) (boolean, []error) {
 	} else if b.lhs != nil {
 		return b.lhs.eval(env)
 	} else if b.identifier != nil {
-		val, set := env.get(b.identifier.lexeme)
+		val, set := env.getBinding(b.identifier.lexeme)
 
 		if !set {
 			return boolean{}, []error{fmt.Errorf("Undefined identifier `%s`",
@@ -122,19 +137,30 @@ func (b boolean) eval(env environment) (boolean, []error) {
 	return b, nil
 }
 
-func (e *environment) get(label string) (expression, bool) {
+func (e *environment) getBinding(label string) (expression, bool) {
 	val, ok := e.bindings[label]
 	return val, ok
 }
 
-func (e *environment) set(label string, expr expression) expression {
+func (e *environment) setBinding(label string, expr expression) *environment {
 	e.bindings[label] = expr
-	return expr
+	return e
+}
+
+func (e *environment) getGate(label string) (gate, bool) {
+	val, ok := e.gates[label]
+	return val, ok
+}
+
+func (e *environment) setGate(label string, g gate) *environment {
+	e.gates[label] = g
+	return e
 }
 
 func newEnvironment(parent *environment) environment {
 	return environment{
 		bindings: make(map[string]expression),
+		gates:    make(map[string]gate),
 		parent:   parent,
 	}
 }
@@ -144,7 +170,7 @@ func (e expression) identifiers(env environment) []token {
 
 	if e.identifier != nil {
 		tokens = append(tokens, *e.identifier)
-		ident, ok := env.get(e.identifier.lexeme)
+		ident, ok := env.getBinding(e.identifier.lexeme)
 
 		if ok {
 			tokens = append(tokens, ident.identifiers(env)...)
