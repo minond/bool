@@ -11,8 +11,17 @@ type environment struct {
 	parent   *environment
 }
 
+type value struct {
+	boolean  *boolean
+	sequence *sequence
+}
+
 type boolean struct {
 	internal bool
+}
+
+type sequence struct {
+	internal []expression
 }
 
 type binding struct {
@@ -36,6 +45,7 @@ type gate struct {
 //   - Check 4: identifier + call, this is a gate call
 //   - Check 5: identifier, this is a plain identifier
 //   - Check 6: literal, this is a plain literal
+//   - Check 7: sequence, this is a sequence
 type expression struct {
 	err        error
 	lhs        *expression
@@ -45,33 +55,34 @@ type expression struct {
 	call       bool
 	args       []expression
 	literal    *boolean
+	sequence   *sequence
 }
 
 type evaluates interface {
-	eval(env environment) (boolean, []error)
+	eval(env environment) (value, []error)
 }
 
-func (b binding) eval(env environment) (boolean, []error) {
+func (b binding) eval(env environment) (value, []error) {
 	for _, id := range b.value.identifiers(env) {
 		if id.lexeme == b.label.lexeme {
-			return boolean{}, []error{fmt.Errorf(
+			return value{}, []error{fmt.Errorf(
 				"Detected circular reference in `%s` identifier",
 				b.label.lexeme)}
 		}
 	}
 
 	env.setBinding(b.label.lexeme, b.value)
-	return boolean{}, nil
+	return value{}, nil
 }
 
-func (g *gate) eval(env environment) (boolean, []error) {
+func (g *gate) eval(env environment) (value, []error) {
 	env.setGate(g.label.lexeme, *g)
-	return boolean{}, nil
+	return value{}, nil
 }
 
-func (b expression) eval(env environment) (boolean, []error) {
+func (b expression) eval(env environment) (value, []error) {
 	if b.err != nil {
-		return boolean{}, []error{fmt.Errorf(
+		return value{}, []error{fmt.Errorf(
 			"Cannot evaluate expression due to error: %s",
 			b.err)}
 	} else if b.lhs != nil && b.op != nil && b.rhs != nil {
@@ -81,44 +92,61 @@ func (b expression) eval(env environment) (boolean, []error) {
 		errs := append(lhsErr, rhsErr...)
 
 		if len(errs) > 0 {
-			return boolean{}, errs
+			return value{}, errs
 		}
 
 		switch b.op.id {
 		case andTok:
-			return boolean{lhs.internal && rhs.internal}, nil
+			return value{
+				boolean: &boolean{
+					lhs.boolean.internal && rhs.boolean.internal,
+				},
+			}, nil
 
 		case orTok:
-			return boolean{lhs.internal || rhs.internal}, nil
+			return value{
+				boolean: &boolean{
+					lhs.boolean.internal || rhs.boolean.internal,
+				},
+			}, nil
 
 		case miTok:
-			return boolean{!lhs.internal || rhs.internal}, nil
+			return value{
+				boolean: &boolean{
+					!lhs.boolean.internal || rhs.boolean.internal,
+				},
+			}, nil
 
 		case xorTok:
-			return boolean{
-				(lhs.internal || rhs.internal) && !(lhs.internal && rhs.internal),
+			return value{
+				boolean: &boolean{
+					(lhs.boolean.internal || rhs.boolean.internal) &&
+						!(lhs.boolean.internal && rhs.boolean.internal),
+				},
 			}, nil
 
 		case eqTok:
-			return boolean{lhs.internal == rhs.internal}, nil
+			return value{
+				boolean: &boolean{lhs.boolean.internal == rhs.boolean.internal},
+			}, nil
 
 		default:
-			return boolean{}, []error{fmt.Errorf("Unknown unary operator: %s",
+			return value{}, []error{fmt.Errorf("Unknown unary operator: %s",
 				b.op.lexeme)}
 		}
 	} else if b.op != nil && b.rhs != nil {
 		val, errs := b.rhs.eval(env)
 
 		if len(errs) > 0 {
-			return boolean{}, errs
+			return value{}, errs
 		}
 
 		switch b.op.id {
 		case notTok:
-			return boolean{!val.internal}, nil
+			return value{boolean: &boolean{!val.boolean.internal}}, nil
 
 		default:
-			return boolean{}, []error{fmt.Errorf("Unknown unary operator: %s",
+			return value{}, []error{fmt.Errorf("Unknown unary operator: %s",
 				b.op.lexeme)}
 		}
 	} else if b.lhs != nil {
@@ -127,11 +155,11 @@ func (b expression) eval(env environment) (boolean, []error) {
 		gate, set := env.getGate(b.identifier.lexeme)
 
 		if !set {
-			return boolean{}, []error{fmt.Errorf("Undefined gate `%s`",
+			return value{}, []error{fmt.Errorf("Undefined gate `%s`",
 				b.identifier.lexeme)}
 		} else {
 			if len(gate.args) != len(b.args) {
-				return boolean{}, []error{fmt.Errorf("Arity error, `%s` "+
+				return value{}, []error{fmt.Errorf("Arity error, `%s` "+
 					"expects %d arguments but got %d instead.",
 					b.identifier.lexeme, len(gate.args), len(b.args))}
 			}
@@ -152,7 +180,7 @@ func (b expression) eval(env environment) (boolean, []error) {
 		val, set := env.getBinding(b.identifier.lexeme)
 
 		if !set {
-			return boolean{}, []error{fmt.Errorf("Undefined identifier `%s`",
+			return value{}, []error{fmt.Errorf("Undefined identifier `%s`",
 				b.identifier.lexeme)}
 		} else if b.identifier != val.identifier {
 			return val.eval(env)
@@ -166,20 +194,22 @@ func (b expression) eval(env environment) (boolean, []error) {
 			// in a gate right now.
 			return val.eval(*env.parent)
 		} else {
-			return boolean{}, []error{fmt.Errorf(
+			return value{}, []error{fmt.Errorf(
 				"Internal error, detected a circular variable reference and "+
 					"expected a parent environment for lookup but none found "+
 					"for `%s` binding", b.identifier.lexeme)}
 		}
 	} else if b.literal != nil {
-		return *b.literal, nil
+		return value{boolean: &boolean{b.literal.internal}}, nil
+	} else if b.sequence != nil {
+		return value{sequence: b.sequence}, nil
 	} else {
-		return boolean{}, []error{errors.New("Invalid evaluation path")}
+		return value{}, []error{errors.New("Invalid evaluation path")}
 	}
 }
 
-func (b boolean) eval(env environment) (boolean, []error) {
-	return b, nil
+func (b boolean) eval(env environment) (value, []error) {
+	return value{boolean: &boolean{b.internal}}, nil
 }
 
 func (e *environment) getBinding(label string) (expression, bool) {

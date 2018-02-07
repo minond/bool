@@ -118,6 +118,7 @@ primary        = BOOLEAN
                | identifier
                | gate-call
                | "(" expression ")" ;
+               | "[" [ expression { "," expression } ] "]" ;
 
 identifier     = LETTER , { LETTER | DIGIT | "_" } ;
 

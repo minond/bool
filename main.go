@@ -143,7 +143,7 @@ func main() {
 					isExpr = true
 				}
 
-				var ret boolean
+				var ret value
 				var evalErrors []error
 
 				if isLocal && prevGate != nil {
@@ -167,7 +167,11 @@ func main() {
 				}
 
 				if isExpr {
-					fmt.Printf("= %t\n\n", ret.internal)
+					if ret.boolean != nil {
+						fmt.Printf("= %t\n\n", ret.boolean.internal)
+					} else if ret.sequence != nil {
+						fmt.Printf("= Seq[%d]\n\n", len(ret.sequence.internal))
+					}
 				}
 			}
 		}
