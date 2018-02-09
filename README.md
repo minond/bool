@@ -111,12 +111,14 @@ unary          = [ UNI_OPERATOR ] unary
 
 primary        = BOOLEAN
                | identifier
+               | number
                | gate-call
                | seq-decl
                | seq-grab
                | "(" expression ")" ;
                | "[" [ expression { "," expression } ] "]" ;
 
+number         = { DIGIT } ;
 identifier     = LETTER , { LETTER | DIGIT | "_" } ;
 
 BIN_OPERATOR   = "^" | "∧" | "=" | "≡" | ">" | "→" | "v" | "∨" | "*" | "⊕" ;
@@ -133,4 +135,5 @@ BOOLEAN        = "true" | "false" | "1" | "0" ;
 - Print prettier ASTs.
 - Move logic from main into a proper runtime.
 - Arrays.
+ - Dynamic dispatch for basic laws to prevent `[] ∧ 1`
 - Ummm, tests.

@@ -199,6 +199,6 @@ func print(v value, env environment) string {
 
 		return buff + "}"
 	} else {
-		return "Error"
+		return fmt.Sprintf("%d", v.number)
 	}
 }

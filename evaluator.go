@@ -3,6 +3,7 @@ package main
 import (
 	"errors"
 	"fmt"
+	"strconv"
 )
 
 type environment struct {
@@ -14,6 +15,7 @@ type environment struct {
 type value struct {
 	boolean  *boolean
 	sequence *sequence
+	number   int
 }
 
 type boolean struct {
@@ -36,8 +38,15 @@ type gate struct {
 	env   *environment
 }
 
-// Kind of a catch-all structure for all types of expressions. Since it serves
-// multiple purposes, it needs to be checked in a specific order:
+// NOTE Well, I guess this is the ugly side of Go's type system. Note to my
+// future self: use separate structs for all of these expressions and move
+// towards something like a visitor pattern that could be automated with `go
+// generate`.
+//
+// Kind of a
+// catch-all structure for all types of expressions. Since it serves multiple
+// purposes, it needs to be checked in a specific order:
+//
 //   - Check 1: err
 //   - Check 2: lhs + op + rhs, this is a binary expression
 //   - Check 3: op + rhs, this is a unary expression with an expression
@@ -46,12 +55,14 @@ type gate struct {
 //   - Check 5: identifier, this is a plain identifier
 //   - Check 6: literal, this is a plain literal
 //   - Check 7: sequence, this is a sequence
+//   - Check 8: num, this is a number
 type expression struct {
 	err        error
 	lhs        *expression
 	rhs        *expression
 	op         *token
 	identifier *token
+	num        *token
 	call       bool
 	args       []expression
 	literal    *boolean
@@ -155,8 +166,46 @@ func (b expression) eval(env environment) (value, []error) {
 		gate, set := env.getGate(b.identifier.lexeme)
 
 		if !set {
-			return value{}, []error{fmt.Errorf("Undefined gate `%s`",
-				b.identifier.lexeme)}
+			if len(b.args) != 1 {
+				return value{}, []error{fmt.Errorf("Undefined gate `%s`",
+					b.identifier.lexeme)}
+			}
+
+			seq, set := env.getBinding(b.identifier.lexeme)
+			idx, errs := b.args[0].eval(env)
+
+			// NOTE Ok this is totally a hack. Clearly there's something wrong
+			// with both the AST data structures and the evalution ones as
+			// well.
+			if idx.boolean != nil && idx.boolean.internal {
+				idx.boolean = nil
+				idx.number = 1
+			} else if idx.boolean != nil && !idx.boolean.internal {
+				idx.boolean = nil
+				idx.number = 0
+			}
+
+			if !set {
+				return value{}, []error{fmt.Errorf("Undefined gate `%s`",
+					b.identifier.lexeme)}
+			} else if seq.sequence == nil {
+				return value{}, []error{fmt.Errorf("Invalid operation, expecting `%s` to be a sequence",
+					b.identifier.lexeme)}
+			} else if len(errs) > 0 {
+				return value{}, append(errs,
+					fmt.Errorf("Invalid operation, expecting a digit when accessing `%s`",
+						b.identifier.lexeme))
+			} else if idx.sequence != nil || idx.boolean != nil {
+				return value{}, []error{fmt.Errorf(
+					"Expecting a digic when accessing `%s` gate.",
+					b.identifier.lexeme)}
+			} else if idx.number >= len(seq.sequence.internal) {
+				return value{}, []error{fmt.Errorf(
+					"Out of bounds error, max is %d and tried to access %d on `%s` sequence.",
+					len(seq.sequence.internal)-1, idx.number, b.identifier.lexeme)}
+			} else {
+				return seq.sequence.internal[idx.number].eval(env)
+			}
 		} else {
 			if len(gate.args) != len(b.args) {
 				return value{}, []error{fmt.Errorf("Arity error, `%s` "+
@@ -214,6 +263,15 @@ func (b expression) eval(env environment) (value, []error) {
 		return value{boolean: &boolean{b.literal.internal}}, nil
 	} else if b.sequence != nil {
 		return value{sequence: b.sequence}, nil
+	} else if b.num != nil {
+		num, err := strconv.Atoi(b.num.lexeme)
+
+		if err != nil {
+			return value{}, []error{
+				fmt.Errorf("Error converting to number: %v", err)}
+		} else {
+			return value{number: num}, []error{}
+		}
 	} else {
 		return value{}, []error{errors.New("Invalid evaluation path")}
 	}

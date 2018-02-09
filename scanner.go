@@ -20,7 +20,7 @@ const (
 	commaTok    tokenId = "comma"
 	cparenTok   tokenId = "cparen"
 	eolTok      tokenId = "eol"
-	eqTok       tokenId = "EQ"
+	eqTok       tokenId = "eq"
 	errTok      tokenId = "err"
 	falseTok    tokenId = "false"
 	gateTok     tokenId = "gate"
@@ -28,6 +28,7 @@ const (
 	invldTok    tokenId = "invalid"
 	miTok       tokenId = "matimp"
 	notTok      tokenId = "not"
+	numTok      tokenId = "num"
 	obrakTok    tokenId = "obrak"
 	oparenTok   tokenId = "oparen"
 	orTok       tokenId = "or"
@@ -140,6 +141,9 @@ func (t token) String() string {
 	case identTok:
 		str = fmt.Sprintf("ID(%s)", t.lexeme)
 
+	case numTok:
+		str = fmt.Sprintf("NUM(%s)", t.lexeme)
+
 	case bindContTok:
 		str = "WHERE"
 
@@ -202,7 +206,7 @@ func scan(raw string) []token {
 			if stringIsBoolean(str) {
 				add(getBoolToken(str), str, nil)
 			} else {
-				add(errTok, str, fmt.Errorf("Unknown word: `%s`", str))
+				add(numTok, str, nil)
 			}
 
 			i += len(word) - 1

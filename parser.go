@@ -227,6 +227,9 @@ func (p *parser) unary() expression {
 		}
 	} else if p.curr().id == eolTok {
 		expr.err = errors.New("Unexpected end of line.")
+	} else if p.match(numTok) {
+		tok := cloneToken(p.prev())
+		expr.num = &tok
 	} else {
 		expr.err = fmt.Errorf(
 			"Invalid expression starting in position %d with character `%s`.",
