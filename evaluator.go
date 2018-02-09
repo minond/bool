@@ -174,7 +174,18 @@ func (b expression) eval(env environment) (value, []error) {
 				subEnv.setBinding(arg.lexeme, b.args[i])
 			}
 
-			return gate.body.eval(subEnv)
+			res, errs := gate.body.eval(subEnv)
+
+			if len(errs) > 0 {
+				return value{}, errs
+			}
+
+			if res.sequence != nil {
+				snapshop, errs := res.sequence.freeze(subEnv)
+				return value{sequence: &snapshop}, errs
+			} else {
+				return res, errs
+			}
 		}
 	} else if b.identifier != nil {
 		val, set := env.getBinding(b.identifier.lexeme)
@@ -289,4 +300,32 @@ func (e expression) errors() []error {
 	}
 
 	return errs
+}
+
+func (s sequence) freeze(env environment) (sequence, []error) {
+	var errs []error
+	snapshop := sequence{}
+
+	for _, expr := range s.internal {
+		val, err := expr.eval(env)
+		errs = append(errs, err...)
+
+		if val.boolean != nil {
+			snapshop.internal = append(snapshop.internal, expression{
+				literal: &boolean{
+					internal: val.boolean.internal,
+				},
+			})
+		} else if val.sequence != nil {
+			snapshop, err := val.sequence.freeze(env)
+			errs = append(errs, err...)
+			snapshop.internal = append(snapshop.internal, expression{
+				sequence: &snapshop,
+			})
+		}
+
+		// Else, what??
+	}
+
+	return snapshop, errs
 }

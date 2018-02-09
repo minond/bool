@@ -167,13 +167,38 @@ func main() {
 				}
 
 				if isExpr {
-					if ret.boolean != nil {
-						fmt.Printf("= %t\n\n", ret.boolean.internal)
-					} else if ret.sequence != nil {
-						fmt.Printf("= Seq[%d]\n\n", len(ret.sequence.internal))
-					}
+					fmt.Printf("= %s\n\n", print(ret, env))
 				}
 			}
 		}
+	}
+}
+
+func print(v value, env environment) string {
+	if v.boolean != nil {
+		return fmt.Sprintf("%t", v.boolean.internal)
+	} else if v.sequence != nil {
+		buff := fmt.Sprintf("Seq[%d]{", len(v.sequence.internal))
+
+		for i, expr := range v.sequence.internal {
+			if i != 0 {
+				buff += ", "
+			}
+
+			ret, _ := expr.eval(env)
+			out := print(ret, env)
+
+			if out == "true" {
+				out = "1"
+			} else if out == "false" {
+				out = "0"
+			}
+
+			buff += fmt.Sprintf("%s", out)
+		}
+
+		return buff + "}"
+	} else {
+		return "Error"
 	}
 }
