@@ -171,7 +171,13 @@ func (b expression) eval(env environment) (value, []error) {
 					b.identifier.lexeme)}
 			}
 
-			seq, set := env.getBinding(b.identifier.lexeme)
+			val, set := env.getBinding(b.identifier.lexeme)
+			seq, errs := val.eval(env)
+
+			if len(errs) > 0 {
+				return value{}, errs
+			}
+
 			idx, errs := b.args[0].eval(env)
 
 			// NOTE Ok this is totally a hack. Clearly there's something wrong
