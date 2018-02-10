@@ -265,8 +265,23 @@ func (b expression) eval(env environment) (value, []error) {
 			}
 
 			if res.isSequence() {
+				// FIXME Freeze, which we mostly needed for printing, has a bug
+				// where sequence identities are getting messed up. Old code:
+				//
 				snapshop, errs := res.sequence.freeze(subEnv)
 				return value{sequence: &snapshop}, errs
+
+				// if len(res.sequence.internal) == 4 {
+				// 	// spew.Dump(subEnv)
+				// 	// spew.Dump(res.sequence.internal[2])
+				// 	// x, _ := res.sequence.internal[2].eval(subEnv)
+				// 	x := res.sequence.internal[2]
+				// 	xx, _ := x.eval(subEnv)
+				// 	spew.Dump(xx)
+				// 	// xx, _ := x.sequence.internal[2].eval(subEnv)
+				// 	// spew.Dump(xx)
+				// }
+				// return res, []error{}
 			} else {
 				return res, errs
 			}
