@@ -71,6 +71,7 @@ type expression struct {
 	args       []expression
 	literal    *boolean
 	sequence   *sequence
+	env        *environment
 }
 
 type evaluates interface {
@@ -103,6 +104,10 @@ func (g *gate) eval(env environment) (value, []error) {
 }
 
 func (b expression) eval(env environment) (value, []error) {
+	if b.env != nil {
+		env = *b.env
+	}
+
 	if b.err != nil {
 		return value{}, []error{fmt.Errorf(
 			"Cannot evaluate expression due to error: %s",
@@ -255,7 +260,14 @@ func (b expression) eval(env environment) (value, []error) {
 			}()
 
 			for i, arg := range gate.args {
-				subEnv.setBinding(arg.lexeme, b.args[i])
+				func(i int) {
+					b.args[i].env = &env
+					subEnv.setBinding(arg.lexeme, b.args[i])
+
+					defer func() {
+						b.args[i].env = nil
+					}()
+				}(i)
 			}
 
 			res, errs := gate.body.eval(subEnv)
@@ -265,23 +277,8 @@ func (b expression) eval(env environment) (value, []error) {
 			}
 
 			if res.isSequence() {
-				// FIXME Freeze, which we mostly needed for printing, has a bug
-				// where sequence identities are getting messed up. Old code:
-				//
 				snapshop, errs := res.sequence.freeze(subEnv)
 				return value{sequence: &snapshop}, errs
-
-				// if len(res.sequence.internal) == 4 {
-				// 	// spew.Dump(subEnv)
-				// 	// spew.Dump(res.sequence.internal[2])
-				// 	// x, _ := res.sequence.internal[2].eval(subEnv)
-				// 	x := res.sequence.internal[2]
-				// 	xx, _ := x.eval(subEnv)
-				// 	spew.Dump(xx)
-				// 	// xx, _ := x.sequence.internal[2].eval(subEnv)
-				// 	// spew.Dump(xx)
-				// }
-				// return res, []error{}
 			} else {
 				return res, errs
 			}

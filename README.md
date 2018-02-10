@@ -89,6 +89,13 @@ gate Adder (a, b, c) = [sum, carry]
     and c_bc is b ∧ c
     and carry is c_ab ∨ c_ac ∨ c_bc
     and sum is c ⊕ s_ab
+
+gate Add4 (x, y) = sum
+  where b03 is Adder(x(3), y(3), 0)
+    and b02 is Adder(x(2), y(2), b03(1))
+    and b01 is Adder(x(1), y(1), b02(1))
+    and b00 is Adder(x(0), y(0), b01(1))
+    and sum is [b00(0), b01(0), b02(0), b03(0)]
 ```
 
 Arrays are called Sequences in bool and work similarly to how they do in most
