@@ -36,8 +36,10 @@ command name. Here's the output of running `.help`:
 ```text
 $ bool
 > .help
+< .reset: reset current environment.
 < .mode: display or change evaluation mode to scan, parse, or eval.
 < .keyboard: print a keyboard with valid operations and their ascii representation.
+< .paste: toggle paste mode.
 < .help: view this help text.
 < .quit: exit program.
 ```
@@ -82,6 +84,10 @@ Here we create a gate called `Mux` which is technically just the evaluation of
 Binding continuations outside of gate declarations result in an error.
 
 ```text
+$ bool
+> .paste
+< paste mode: on
+
 gate Adder (a, b, c) = [sum, carry]
   where s_ab is a ⊕ b
     and c_ab is a ∧ b
@@ -89,13 +95,6 @@ gate Adder (a, b, c) = [sum, carry]
     and c_bc is b ∧ c
     and carry is c_ab ∨ c_ac ∨ c_bc
     and sum is c ⊕ s_ab
-
-gate Add4 (x, y) = sum
-  where b03 is Adder(x(3), y(3), 0)
-    and b02 is Adder(x(2), y(2), b03(1))
-    and b01 is Adder(x(1), y(1), b02(1))
-    and b00 is Adder(x(0), y(0), b01(1))
-    and sum is [b00(0), b01(0), b02(0), b03(0)]
 
 gate Add8 (x, y) = sum
   where b07 is Adder(x(7), y(7), 0)
@@ -108,7 +107,16 @@ gate Add8 (x, y) = sum
     and b00 is Adder(x(0), y(0), b01(1))
     and sum is [b00(0), b01(0), b02(0), b03(0), b04(0), b05(0), b06(0), b07(0)]
 
-Add8([0, 0, 0, 0, 0, 0, 0, 1], [0, 0, 0, 1, 0, 0, 0, 1])
+.paste
+< paste mode: off
+> Add8([0, 0, 0, 0, 0, 0, 0, 1], [0, 0, 0, 1, 0, 0, 0, 1])
+= Seq[8]{0, 0, 0, 1, 0, 0, 1, 0}
+
+> Add8([0, 0, 0, 0, 0, 0, 1, 1], [0, 0, 0, 1, 0, 0, 0, 1])
+= Seq[8]{0, 0, 0, 1, 0, 1, 0, 0}
+
+> Add8([0, 0, 0, 0, 0, 0, 1, 1], [0, 0, 0, 1, 1, 0, 0, 1])
+= Seq[8]{0, 0, 0, 1, 1, 1, 0, 0}
 ```
 
 Arrays are called Sequences in Bool and work similarly to how they do in most
