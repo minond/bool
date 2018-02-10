@@ -3,16 +3,31 @@ package main
 import (
 	"errors"
 	"fmt"
+	"strconv"
 )
+
+type typeId string
+type method func(env environment, args ...value) (value, []error)
 
 type environment struct {
 	bindings map[string]expression
+	methods  map[string]method
 	gates    map[string]gate
 	parent   *environment
 }
 
+type value struct {
+	boolean  *boolean
+	sequence *sequence
+	number   int
+}
+
 type boolean struct {
 	internal bool
+}
+
+type sequence struct {
+	internal []expression
 }
 
 type binding struct {
@@ -27,8 +42,15 @@ type gate struct {
 	env   *environment
 }
 
-// Kind of a catch-all structure for all types of expressions. Since it serves
-// multiple purposes, it needs to be checked in a specific order:
+// NOTE Well, I guess this is the ugly side of Go's type system. Note to my
+// future self: use separate structs for all of these expressions and move
+// towards something like a visitor pattern that could be automated with `go
+// generate`.
+//
+// Kind of a
+// catch-all structure for all types of expressions. Since it serves multiple
+// purposes, it needs to be checked in a specific order:
+//
 //   - Check 1: err
 //   - Check 2: lhs + op + rhs, this is a binary expression
 //   - Check 3: op + rhs, this is a unary expression with an expression
@@ -36,42 +58,58 @@ type gate struct {
 //   - Check 4: identifier + call, this is a gate call
 //   - Check 5: identifier, this is a plain identifier
 //   - Check 6: literal, this is a plain literal
+//   - Check 7: sequence, this is a sequence
+//   - Check 8: num, this is a number
 type expression struct {
 	err        error
 	lhs        *expression
 	rhs        *expression
 	op         *token
 	identifier *token
+	num        *token
 	call       bool
 	args       []expression
 	literal    *boolean
+	sequence   *sequence
+	env        *environment
 }
 
 type evaluates interface {
-	eval(env environment) (boolean, []error)
+	eval(env environment) (value, []error)
 }
 
-func (b binding) eval(env environment) (boolean, []error) {
+const (
+	typeInvalid  typeId = "invalid"
+	typeBoolean  typeId = "boolean"
+	typeSequence typeId = "sequence"
+	typeNumber   typeId = "number"
+)
+
+func (b binding) eval(env environment) (value, []error) {
 	for _, id := range b.value.identifiers(env) {
 		if id.lexeme == b.label.lexeme {
-			return boolean{}, []error{fmt.Errorf(
+			return value{}, []error{fmt.Errorf(
 				"Detected circular reference in `%s` identifier",
 				b.label.lexeme)}
 		}
 	}
 
 	env.setBinding(b.label.lexeme, b.value)
-	return boolean{}, nil
+	return value{}, nil
 }
 
-func (g *gate) eval(env environment) (boolean, []error) {
+func (g *gate) eval(env environment) (value, []error) {
 	env.setGate(g.label.lexeme, *g)
-	return boolean{}, nil
+	return value{}, nil
 }
 
-func (b expression) eval(env environment) (boolean, []error) {
+func (b expression) eval(env environment) (value, []error) {
+	if b.env != nil {
+		env = *b.env
+	}
+
 	if b.err != nil {
-		return boolean{}, []error{fmt.Errorf(
+		return value{}, []error{fmt.Errorf(
 			"Cannot evaluate expression due to error: %s",
 			b.err)}
 	} else if b.lhs != nil && b.op != nil && b.rhs != nil {
@@ -81,44 +119,72 @@ func (b expression) eval(env environment) (boolean, []error) {
 		errs := append(lhsErr, rhsErr...)
 
 		if len(errs) > 0 {
-			return boolean{}, errs
+			return value{}, errs
 		}
 
 		switch b.op.id {
 		case andTok:
-			return boolean{lhs.internal && rhs.internal}, nil
+			if fn, ok := env.getMethod("and"); !ok {
+				return value{}, []error{fmt.Errorf("Unknown unary operator: %s",
+					b.op.lexeme)}
+			} else {
+				return fn(env, lhs, rhs)
+			}
 
 		case orTok:
-			return boolean{lhs.internal || rhs.internal}, nil
+			if fn, ok := env.getMethod("or"); !ok {
+				return value{}, []error{fmt.Errorf("Unknown unary operator: %s",
+					b.op.lexeme)}
+			} else {
+				return fn(env, lhs, rhs)
+			}
 
 		case miTok:
-			return boolean{!lhs.internal || rhs.internal}, nil
+			if fn, ok := env.getMethod("mi"); !ok {
+				return value{}, []error{fmt.Errorf("Unknown unary operator: %s",
+					b.op.lexeme)}
+			} else {
+				return fn(env, lhs, rhs)
+			}
 
 		case xorTok:
-			return boolean{
-				(lhs.internal || rhs.internal) && !(lhs.internal && rhs.internal),
-			}, nil
+			if fn, ok := env.getMethod("xor"); !ok {
+				return value{}, []error{fmt.Errorf("Unknown unary operator: %s",
+					b.op.lexeme)}
+			} else {
+				return fn(env, lhs, rhs)
+			}
 
 		case eqTok:
-			return boolean{lhs.internal == rhs.internal}, nil
+			if fn, ok := env.getMethod("eq"); !ok {
+				return value{}, []error{fmt.Errorf("Unknown unary operator: %s",
+					b.op.lexeme)}
+			} else {
+				return fn(env, lhs, rhs)
+			}
 
 		default:
-			return boolean{}, []error{fmt.Errorf("Unknown unary operator: %s",
+			return value{}, []error{fmt.Errorf("Unknown unary operator: %s",
 				b.op.lexeme)}
 		}
 	} else if b.op != nil && b.rhs != nil {
 		val, errs := b.rhs.eval(env)
 
 		if len(errs) > 0 {
-			return boolean{}, errs
+			return value{}, errs
 		}
 
 		switch b.op.id {
 		case notTok:
-			return boolean{!val.internal}, nil
+			if fn, ok := env.getMethod("not"); !ok {
+				return value{}, []error{fmt.Errorf("Unknown unary operator: %s",
+					b.op.lexeme)}
+			} else {
+				return fn(env, val)
+			}
 
 		default:
-			return boolean{}, []error{fmt.Errorf("Unknown unary operator: %s",
+			return value{}, []error{fmt.Errorf("Unknown unary operator: %s",
 				b.op.lexeme)}
 		}
 	} else if b.lhs != nil {
@@ -127,11 +193,62 @@ func (b expression) eval(env environment) (boolean, []error) {
 		gate, set := env.getGate(b.identifier.lexeme)
 
 		if !set {
-			return boolean{}, []error{fmt.Errorf("Undefined gate `%s`",
-				b.identifier.lexeme)}
+			if len(b.args) != 1 {
+				return value{}, []error{fmt.Errorf("Undefined gate `%s`",
+					b.identifier.lexeme)}
+			}
+
+			var seq value
+			var errs []error
+			val, set := env.getBinding(b.identifier.lexeme)
+
+			if b.identifier != val.identifier {
+				seq, errs = val.eval(env)
+			} else if env.parent != nil {
+				seq, errs = val.eval(*env.parent)
+			}
+
+			if len(errs) > 0 {
+				return value{}, errs
+			}
+
+			idx, errs := b.args[0].eval(env)
+
+			// NOTE Ok this is totally a hack. Clearly there's something wrong
+			// with both the AST data structures and the evalution ones as
+			// well.
+			if idx.isBoolean() && idx.boolean.internal {
+				idx.boolean = nil
+				idx.number = 1
+			} else if idx.isBoolean() && !idx.boolean.internal {
+				idx.boolean = nil
+				idx.number = 0
+			}
+
+			if !set {
+				return value{}, []error{fmt.Errorf("Undefined gate `%s`",
+					b.identifier.lexeme)}
+			} else if seq.sequence == nil {
+				return value{}, []error{fmt.Errorf("Invalid operation, expecting `%s` to be a sequence",
+					b.identifier.lexeme)}
+			} else if len(errs) > 0 {
+				return value{}, append(errs,
+					fmt.Errorf("Invalid operation, expecting a digit when accessing `%s`",
+						b.identifier.lexeme))
+			} else if idx.isSequence() || idx.isBoolean() {
+				return value{}, []error{fmt.Errorf(
+					"Expecting a digic when accessing `%s` gate.",
+					b.identifier.lexeme)}
+			} else if idx.number >= len(seq.sequence.internal) {
+				return value{}, []error{fmt.Errorf(
+					"Out of bounds error, max is %d and tried to access %d on `%s` sequence.",
+					len(seq.sequence.internal)-1, idx.number, b.identifier.lexeme)}
+			} else {
+				return seq.sequence.internal[idx.number].eval(env)
+			}
 		} else {
 			if len(gate.args) != len(b.args) {
-				return boolean{}, []error{fmt.Errorf("Arity error, `%s` "+
+				return value{}, []error{fmt.Errorf("Arity error, `%s` "+
 					"expects %d arguments but got %d instead.",
 					b.identifier.lexeme, len(gate.args), len(b.args))}
 			}
@@ -143,16 +260,34 @@ func (b expression) eval(env environment) (boolean, []error) {
 			}()
 
 			for i, arg := range gate.args {
-				subEnv.setBinding(arg.lexeme, b.args[i])
+				func(i int) {
+					b.args[i].env = &env
+					subEnv.setBinding(arg.lexeme, b.args[i])
+
+					defer func() {
+						b.args[i].env = nil
+					}()
+				}(i)
 			}
 
-			return gate.body.eval(subEnv)
+			res, errs := gate.body.eval(subEnv)
+
+			if len(errs) > 0 {
+				return value{}, errs
+			}
+
+			if res.isSequence() {
+				snapshop, errs := res.sequence.freeze(subEnv)
+				return value{sequence: &snapshop}, errs
+			} else {
+				return res, errs
+			}
 		}
 	} else if b.identifier != nil {
 		val, set := env.getBinding(b.identifier.lexeme)
 
 		if !set {
-			return boolean{}, []error{fmt.Errorf("Undefined identifier `%s`",
+			return value{}, []error{fmt.Errorf("Undefined identifier `%s`",
 				b.identifier.lexeme)}
 		} else if b.identifier != val.identifier {
 			return val.eval(env)
@@ -166,20 +301,31 @@ func (b expression) eval(env environment) (boolean, []error) {
 			// in a gate right now.
 			return val.eval(*env.parent)
 		} else {
-			return boolean{}, []error{fmt.Errorf(
+			return value{}, []error{fmt.Errorf(
 				"Internal error, detected a circular variable reference and "+
 					"expected a parent environment for lookup but none found "+
 					"for `%s` binding", b.identifier.lexeme)}
 		}
 	} else if b.literal != nil {
-		return *b.literal, nil
+		return value{boolean: &boolean{b.literal.internal}}, nil
+	} else if b.sequence != nil {
+		return value{sequence: b.sequence}, nil
+	} else if b.num != nil {
+		num, err := strconv.Atoi(b.num.lexeme)
+
+		if err != nil {
+			return value{}, []error{
+				fmt.Errorf("Error converting to number: %v", err)}
+		} else {
+			return value{number: num}, []error{}
+		}
 	} else {
-		return boolean{}, []error{errors.New("Invalid evaluation path")}
+		return value{}, []error{errors.New("Invalid evaluation path")}
 	}
 }
 
-func (b boolean) eval(env environment) (boolean, []error) {
-	return b, nil
+func (b boolean) eval(env environment) (value, []error) {
+	return value{boolean: &boolean{b.internal}}, nil
 }
 
 func (e *environment) getBinding(label string) (expression, bool) {
@@ -187,6 +333,16 @@ func (e *environment) getBinding(label string) (expression, bool) {
 
 	if !ok && e.parent != nil {
 		return e.parent.getBinding(label)
+	} else {
+		return val, ok
+	}
+}
+
+func (e *environment) getMethod(label string) (method, bool) {
+	val, ok := e.methods[label]
+
+	if !ok && e.parent != nil {
+		return e.parent.getMethod(label)
 	} else {
 		return val, ok
 	}
@@ -215,6 +371,7 @@ func (e *environment) setGate(label string, g gate) *environment {
 func newEnvironment(parent *environment) environment {
 	return environment{
 		bindings: make(map[string]expression),
+		methods:  getBuiltins(),
 		gates:    make(map[string]gate),
 		parent:   parent,
 	}
@@ -259,4 +416,209 @@ func (e expression) errors() []error {
 	}
 
 	return errs
+}
+
+func (s sequence) freeze(env environment) (sequence, []error) {
+	var errs []error
+	snapshop := sequence{}
+
+	for _, expr := range s.internal {
+		val, err := expr.eval(env)
+		errs = append(errs, err...)
+
+		if val.isBoolean() {
+			snapshop.internal = append(snapshop.internal, expression{
+				literal: &boolean{
+					internal: val.boolean.internal,
+				},
+			})
+		} else if val.isSequence() {
+			snapshop, err := val.sequence.freeze(env)
+			errs = append(errs, err...)
+			snapshop.internal = append(snapshop.internal, expression{
+				sequence: &snapshop,
+			})
+		} else if val.isNumber() {
+			snapshop.internal = append(snapshop.internal, expression{
+				num: &token{
+					id:     numTok,
+					lexeme: strconv.FormatInt(int64(val.number), 10),
+				},
+			})
+		}
+	}
+
+	return snapshop, errs
+}
+
+func (v value) isBoolean() bool {
+	return v.boolean != nil
+}
+
+func (v value) isSequence() bool {
+	return v.sequence != nil
+}
+
+func (v value) isNumber() bool {
+	return !v.isBoolean() && !v.isSequence()
+}
+
+func (v value) getTypeId() typeId {
+	switch {
+	case v.isBoolean():
+		return typeBoolean
+
+	case v.isSequence():
+		return typeSequence
+
+	case v.isNumber():
+		return typeNumber
+
+	default:
+		return typeInvalid
+	}
+}
+
+func getBuiltins() map[string]method {
+	return map[string]method{
+		"and": andBuiltin,
+		"eq":  eqBuiltin,
+		"mi":  miBuiltin,
+		"not": notBuiltin,
+		"or":  orBuiltin,
+		"xor": xorBuiltin,
+	}
+}
+
+func andBuiltin(env environment, args ...value) (value, []error) {
+	if err := strictArityCheck("and", 2, args...); err != nil {
+		return value{}, []error{err}
+	}
+
+	if err := strictTypeCheck("and", 1, typeBoolean, args[0]); err != nil {
+		return value{}, []error{err}
+	}
+
+	if err := strictTypeCheck("and", 2, typeBoolean, args[1]); err != nil {
+		return value{}, []error{err}
+	}
+
+	return value{
+		boolean: &boolean{
+			args[0].boolean.internal && args[1].boolean.internal,
+		},
+	}, nil
+}
+
+func orBuiltin(env environment, args ...value) (value, []error) {
+	if err := strictArityCheck("or", 2, args...); err != nil {
+		return value{}, []error{err}
+	}
+
+	if err := strictTypeCheck("or", 1, typeBoolean, args[0]); err != nil {
+		return value{}, []error{err}
+	}
+
+	if err := strictTypeCheck("or", 2, typeBoolean, args[1]); err != nil {
+		return value{}, []error{err}
+	}
+
+	return value{
+		boolean: &boolean{
+			args[0].boolean.internal || args[1].boolean.internal,
+		},
+	}, nil
+}
+
+func miBuiltin(env environment, args ...value) (value, []error) {
+	if err := strictArityCheck("mi", 2, args...); err != nil {
+		return value{}, []error{err}
+	}
+
+	if err := strictTypeCheck("mi", 1, typeBoolean, args[0]); err != nil {
+		return value{}, []error{err}
+	}
+
+	if err := strictTypeCheck("mi", 2, typeBoolean, args[1]); err != nil {
+		return value{}, []error{err}
+	}
+
+	return value{
+		boolean: &boolean{
+			!args[0].boolean.internal || args[1].boolean.internal,
+		},
+	}, nil
+}
+
+func xorBuiltin(env environment, args ...value) (value, []error) {
+	if err := strictArityCheck("xor", 2, args...); err != nil {
+		return value{}, []error{err}
+	}
+
+	if err := strictTypeCheck("xor", 1, typeBoolean, args[0]); err != nil {
+		return value{}, []error{err}
+	}
+
+	if err := strictTypeCheck("xor", 2, typeBoolean, args[1]); err != nil {
+		return value{}, []error{err}
+	}
+
+	return value{
+		boolean: &boolean{
+			(args[0].boolean.internal || args[1].boolean.internal) &&
+				!(args[0].boolean.internal && args[1].boolean.internal),
+		},
+	}, nil
+}
+
+func eqBuiltin(env environment, args ...value) (value, []error) {
+	if err := strictArityCheck("eq", 2, args...); err != nil {
+		return value{}, []error{err}
+	}
+
+	if err := strictTypeCheck("eq", 1, typeBoolean, args[0]); err != nil {
+		return value{}, []error{err}
+	}
+
+	if err := strictTypeCheck("eq", 2, typeBoolean, args[1]); err != nil {
+		return value{}, []error{err}
+	}
+
+	return value{
+		boolean: &boolean{
+			args[0].boolean.internal == args[1].boolean.internal,
+		},
+	}, nil
+}
+
+func notBuiltin(env environment, args ...value) (value, []error) {
+	if err := strictArityCheck("not", 1, args...); err != nil {
+		return value{}, []error{err}
+	}
+
+	if err := strictTypeCheck("not", 1, typeBoolean, args[0]); err != nil {
+		return value{}, []error{err}
+	}
+
+	return value{boolean: &boolean{!args[0].boolean.internal}}, []error{}
+}
+
+func strictArityCheck(label string, expected int, args ...value) error {
+	if expected != len(args) {
+		return fmt.Errorf("Arity error, `%s` expects %d arguments but got %d instead.",
+			label, expected, len(args))
+	}
+
+	return nil
+}
+
+func strictTypeCheck(label string, pos int, expId typeId, got value) error {
+	gotId := got.getTypeId()
+
+	if expId != gotId {
+		return fmt.Errorf("Type error, `%s` expects a `%s` in position %d but got `%s` instead.",
+			label, expId, pos, gotId)
+	}
+
+	return nil
 }

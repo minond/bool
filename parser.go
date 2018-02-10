@@ -181,9 +181,7 @@ func (p *parser) unary() expression {
 
 				if p.match(commaTok) {
 					continue
-				}
-
-				if p.match(cparenTok) {
+				} else if p.match(cparenTok) {
 					break
 				} else {
 					expr.err = fmt.Errorf(
@@ -204,8 +202,34 @@ func (p *parser) unary() expression {
 		lhs := p.expression()
 		expr.lhs = &lhs
 		expr.err = p.expect(cparenTok)
+	} else if p.match(obrakTok) {
+		expr.sequence = &sequence{}
+
+		for !p.match(cbrakTok) {
+			item := p.expression()
+
+			if item.err != nil {
+				expr.err = item.err
+				return expr
+			}
+
+			expr.sequence.internal = append(expr.sequence.internal, item)
+
+			if p.match(commaTok) {
+				continue
+			} else if p.match(cbrakTok) {
+				break
+			} else {
+				expr.err = fmt.Errorf(
+					"Expecting a closing braket but found %s in position %d instead.",
+					p.curr(), p.curr().pos)
+			}
+		}
 	} else if p.curr().id == eolTok {
 		expr.err = errors.New("Unexpected end of line.")
+	} else if p.match(numTok) {
+		tok := cloneToken(p.prev())
+		expr.num = &tok
 	} else {
 		expr.err = fmt.Errorf(
 			"Invalid expression starting in position %d with character `%s`.",

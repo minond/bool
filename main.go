@@ -143,7 +143,7 @@ func main() {
 					isExpr = true
 				}
 
-				var ret boolean
+				var ret value
 				var evalErrors []error
 
 				if isLocal && prevGate != nil {
@@ -167,9 +167,40 @@ func main() {
 				}
 
 				if isExpr {
-					fmt.Printf("= %t\n\n", ret.internal)
+					fmt.Printf("= %s\n\n", print(ret, env))
 				}
 			}
 		}
+	}
+}
+
+func print(v value, env environment) string {
+	if v.isBoolean() {
+		return fmt.Sprintf("%t", v.boolean.internal)
+	} else if v.isSequence() {
+		buff := fmt.Sprintf("Seq[%d]{", len(v.sequence.internal))
+
+		for i, expr := range v.sequence.internal {
+			if i != 0 {
+				buff += ", "
+			}
+
+			ret, _ := expr.eval(env)
+			out := print(ret, env)
+
+			if out == "true" {
+				out = "1"
+			} else if out == "false" {
+				out = "0"
+			}
+
+			buff += fmt.Sprintf("%s", out)
+		}
+
+		return buff + "}"
+	} else if v.isNumber() {
+		return fmt.Sprintf("%d", v.number)
+	} else {
+		return "Error"
 	}
 }
