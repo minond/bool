@@ -82,9 +82,13 @@ Here we create a gate called `Mux` which is technically just the evaluation of
 Binding continuations outside of gate declarations result in an error.
 
 ```text
-gate HalfAdder (a, b) = [sum, carry]
-  where sum is a ⊕ b
-    and carry is a ∧ b
+gate Adder (a, b, c) = [sum, carry]
+  where s_ab is a ⊕ b
+    and c_ab is a ∧ b
+    and c_ac is a ∧ c
+    and c_bc is b ∧ c
+    and carry is c_ab ∨ c_ac ∨ c_bc
+    and sum is c ⊕ s_ab
 ```
 
 Arrays are called Sequences in bool and work similarly to how they do in most
@@ -135,5 +139,4 @@ BOOLEAN        = "true" | "false" | "1" | "0" ;
 - Print prettier ASTs.
 - Move logic from main into a proper runtime.
 - Arrays.
- - Dynamic dispatch for basic laws to prevent `[] ∧ 1`
 - Ummm, tests.
