@@ -27,6 +27,7 @@ const (
 	cmdMode     = ".mode"
 	cmdQuit     = ".quit"
 	cmdReset    = ".reset"
+	cmdPaste    = ".paste"
 )
 
 func main() {
@@ -35,9 +36,13 @@ func main() {
 	reader := bufio.NewReader(os.Stdin)
 	env := newEnvironment(nil)
 	mode := evalMode
+	pasting := false
 
 	for {
-		fmt.Print("> ")
+		if !pasting {
+			fmt.Print("> ")
+		}
+
 		text, _ := reader.ReadString('\n')
 		text = strings.TrimSpace(text)
 
@@ -57,6 +62,7 @@ func main() {
 			fmt.Printf("< %s: reset current environment.\n", cmdReset)
 			fmt.Printf("< %s: display or change evaluation mode to %s, %s, or %s.\n", cmdMode, scanMode, parseMode, evalMode)
 			fmt.Printf("< %s: print a keyboard with valid operations and their ascii representation.\n", cmdKeyboard)
+			fmt.Printf("< %s: toggle paste mode.\n", cmdPaste)
 			fmt.Printf("< %s: view this help text.\n", cmdHelp)
 			fmt.Printf("< %s: exit program.\n", cmdQuit)
 			fmt.Println()
@@ -69,6 +75,15 @@ func main() {
 			fmt.Printf("< equivalence: %s or %s\n", string(eqRn), string(eqAsciiRn))
 			fmt.Printf("< material implication: %s or %s\n", string(miRn), string(miAsciiRn))
 			fmt.Println()
+
+		case cmdPaste:
+			pasting = !pasting
+
+			if pasting {
+				fmt.Println("< paste mode: on")
+			} else {
+				fmt.Println("< paste mode: off")
+			}
 
 		default:
 			if text == "" {
