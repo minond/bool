@@ -119,7 +119,7 @@ primary        = BOOLEAN
                | gate-call
                | seq-decl
                | seq-grab
-               | "(" expression ")" ;
+               | "(" expression ")"
                | "[" [ expression { "," expression } ] "]" ;
 
 number         = { DIGIT } ;
