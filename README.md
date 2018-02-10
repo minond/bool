@@ -159,5 +159,4 @@ BOOLEAN        = "true" | "false" | "1" | "0" ;
 - Add feature to print truth tables.
 - Print prettier ASTs.
 - Move logic from main into a proper runtime.
-- Arrays.
 - Ummm, tests.
