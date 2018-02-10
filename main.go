@@ -175,9 +175,9 @@ func main() {
 }
 
 func print(v value, env environment) string {
-	if v.boolean != nil {
+	if v.isBoolean() {
 		return fmt.Sprintf("%t", v.boolean.internal)
-	} else if v.sequence != nil {
+	} else if v.isSequence() {
 		buff := fmt.Sprintf("Seq[%d]{", len(v.sequence.internal))
 
 		for i, expr := range v.sequence.internal {
@@ -198,7 +198,9 @@ func print(v value, env environment) string {
 		}
 
 		return buff + "}"
-	} else {
+	} else if v.isNumber() {
 		return fmt.Sprintf("%d", v.number)
+	} else {
+		return "Error"
 	}
 }

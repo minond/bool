@@ -183,10 +183,10 @@ func (b expression) eval(env environment) (value, []error) {
 			// NOTE Ok this is totally a hack. Clearly there's something wrong
 			// with both the AST data structures and the evalution ones as
 			// well.
-			if idx.boolean != nil && idx.boolean.internal {
+			if idx.isBoolean() && idx.boolean.internal {
 				idx.boolean = nil
 				idx.number = 1
-			} else if idx.boolean != nil && !idx.boolean.internal {
+			} else if idx.isBoolean() && !idx.boolean.internal {
 				idx.boolean = nil
 				idx.number = 0
 			}
@@ -201,7 +201,7 @@ func (b expression) eval(env environment) (value, []error) {
 				return value{}, append(errs,
 					fmt.Errorf("Invalid operation, expecting a digit when accessing `%s`",
 						b.identifier.lexeme))
-			} else if idx.sequence != nil || idx.boolean != nil {
+			} else if idx.isSequence() || idx.isBoolean() {
 				return value{}, []error{fmt.Errorf(
 					"Expecting a digic when accessing `%s` gate.",
 					b.identifier.lexeme)}
@@ -235,7 +235,7 @@ func (b expression) eval(env environment) (value, []error) {
 				return value{}, errs
 			}
 
-			if res.sequence != nil {
+			if res.isSequence() {
 				snapshop, errs := res.sequence.freeze(subEnv)
 				return value{sequence: &snapshop}, errs
 			} else {
@@ -374,21 +374,26 @@ func (s sequence) freeze(env environment) (sequence, []error) {
 		val, err := expr.eval(env)
 		errs = append(errs, err...)
 
-		if val.boolean != nil {
+		if val.isBoolean() {
 			snapshop.internal = append(snapshop.internal, expression{
 				literal: &boolean{
 					internal: val.boolean.internal,
 				},
 			})
-		} else if val.sequence != nil {
+		} else if val.isSequence() {
 			snapshop, err := val.sequence.freeze(env)
 			errs = append(errs, err...)
 			snapshop.internal = append(snapshop.internal, expression{
 				sequence: &snapshop,
 			})
+		} else if val.isNumber() {
+			snapshop.internal = append(snapshop.internal, expression{
+				num: &token{
+					id:     numTok,
+					lexeme: strconv.FormatInt(int64(val.number), 10),
+				},
+			})
 		}
-
-		// Else, what??
 	}
 
 	return snapshop, errs
