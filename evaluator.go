@@ -6,8 +6,12 @@ import (
 	"strconv"
 )
 
+type typeId string
+type method func(env environment, args ...value) (value, []error)
+
 type environment struct {
 	bindings map[string]expression
+	methods  map[string]method
 	gates    map[string]gate
 	parent   *environment
 }
@@ -72,6 +76,13 @@ type expression struct {
 type evaluates interface {
 	eval(env environment) (value, []error)
 }
+
+const (
+	typeInvalid  typeId = "invalid"
+	typeBoolean  typeId = "boolean"
+	typeSequence typeId = "sequence"
+	typeNumber   typeId = "number"
+)
 
 func (b binding) eval(env environment) (value, []error) {
 	for _, id := range b.value.identifiers(env) {
@@ -154,7 +165,8 @@ func (b expression) eval(env environment) (value, []error) {
 
 		switch b.op.id {
 		case notTok:
-			return value{boolean: &boolean{!val.boolean.internal}}, nil
+			fn, _ := env.getMethod("not")
+			return fn(env, val)
 
 		default:
 			return value{}, []error{fmt.Errorf("Unknown unary operator: %s",
@@ -297,6 +309,16 @@ func (e *environment) getBinding(label string) (expression, bool) {
 	}
 }
 
+func (e *environment) getMethod(label string) (method, bool) {
+	val, ok := e.methods[label]
+
+	if !ok && e.parent != nil {
+		return e.parent.getMethod(label)
+	} else {
+		return val, ok
+	}
+}
+
 func (e *environment) setBinding(label string, expr expression) *environment {
 	e.bindings[label] = expr
 	return e
@@ -320,6 +342,7 @@ func (e *environment) setGate(label string, g gate) *environment {
 func newEnvironment(parent *environment) environment {
 	return environment{
 		bindings: make(map[string]expression),
+		methods:  getBuiltins(),
 		gates:    make(map[string]gate),
 		parent:   parent,
 	}
@@ -397,4 +420,70 @@ func (s sequence) freeze(env environment) (sequence, []error) {
 	}
 
 	return snapshop, errs
+}
+
+func (v value) isBoolean() bool {
+	return v.boolean != nil
+}
+
+func (v value) isSequence() bool {
+	return v.sequence != nil
+}
+
+func (v value) isNumber() bool {
+	return !v.isBoolean() && !v.isSequence()
+}
+
+func (v value) getTypeId() typeId {
+	switch {
+	case v.isBoolean():
+		return typeBoolean
+
+	case v.isSequence():
+		return typeSequence
+
+	case v.isNumber():
+		return typeNumber
+
+	default:
+		return typeInvalid
+	}
+}
+
+func getBuiltins() map[string]method {
+	return map[string]method{
+		"not": notBuiltin,
+	}
+}
+
+func notBuiltin(env environment, args ...value) (value, []error) {
+	if err := strictArityCheck("not", 1, args...); err != nil {
+		return value{}, []error{err}
+	}
+
+	if err := strictTypeCheck("not", 1, typeBoolean, args[0]); err != nil {
+		return value{}, []error{err}
+	}
+
+	return value{boolean: &boolean{!args[0].boolean.internal}}, []error{}
+}
+
+func strictArityCheck(label string, expected int, args ...value) error {
+	if expected != len(args) {
+		return fmt.Errorf("Arity error, `%s` expects %d arguments but got %d instead.",
+			label, expected, len(args))
+	}
+
+	return nil
+}
+
+func strictTypeCheck(label string, pos int, expId typeId, got value) error {
+	gotId := got.getTypeId()
+
+	if expId != gotId {
+		return fmt.Errorf("Type error, `%s` expects a `%s` in position %d but got `%s` instead.",
+			label, expId, pos, gotId)
+	}
+
+	return nil
 }
