@@ -119,38 +119,44 @@ func (b expression) eval(env environment) (value, []error) {
 
 		switch b.op.id {
 		case andTok:
-			return value{
-				boolean: &boolean{
-					lhs.boolean.internal && rhs.boolean.internal,
-				},
-			}, nil
+			if fn, ok := env.getMethod("and"); !ok {
+				return value{}, []error{fmt.Errorf("Unknown unary operator: %s",
+					b.op.lexeme)}
+			} else {
+				return fn(env, lhs, rhs)
+			}
 
 		case orTok:
-			return value{
-				boolean: &boolean{
-					lhs.boolean.internal || rhs.boolean.internal,
-				},
-			}, nil
+			if fn, ok := env.getMethod("or"); !ok {
+				return value{}, []error{fmt.Errorf("Unknown unary operator: %s",
+					b.op.lexeme)}
+			} else {
+				return fn(env, lhs, rhs)
+			}
 
 		case miTok:
-			return value{
-				boolean: &boolean{
-					!lhs.boolean.internal || rhs.boolean.internal,
-				},
-			}, nil
+			if fn, ok := env.getMethod("mi"); !ok {
+				return value{}, []error{fmt.Errorf("Unknown unary operator: %s",
+					b.op.lexeme)}
+			} else {
+				return fn(env, lhs, rhs)
+			}
 
 		case xorTok:
-			return value{
-				boolean: &boolean{
-					(lhs.boolean.internal || rhs.boolean.internal) &&
-						!(lhs.boolean.internal && rhs.boolean.internal),
-				},
-			}, nil
+			if fn, ok := env.getMethod("xor"); !ok {
+				return value{}, []error{fmt.Errorf("Unknown unary operator: %s",
+					b.op.lexeme)}
+			} else {
+				return fn(env, lhs, rhs)
+			}
 
 		case eqTok:
-			return value{
-				boolean: &boolean{lhs.boolean.internal == rhs.boolean.internal},
-			}, nil
+			if fn, ok := env.getMethod("eq"); !ok {
+				return value{}, []error{fmt.Errorf("Unknown unary operator: %s",
+					b.op.lexeme)}
+			} else {
+				return fn(env, lhs, rhs)
+			}
 
 		default:
 			return value{}, []error{fmt.Errorf("Unknown unary operator: %s",
@@ -165,8 +171,12 @@ func (b expression) eval(env environment) (value, []error) {
 
 		switch b.op.id {
 		case notTok:
-			fn, _ := env.getMethod("not")
-			return fn(env, val)
+			if fn, ok := env.getMethod("not"); !ok {
+				return value{}, []error{fmt.Errorf("Unknown unary operator: %s",
+					b.op.lexeme)}
+			} else {
+				return fn(env, val)
+			}
 
 		default:
 			return value{}, []error{fmt.Errorf("Unknown unary operator: %s",
@@ -452,8 +462,114 @@ func (v value) getTypeId() typeId {
 
 func getBuiltins() map[string]method {
 	return map[string]method{
+		"and": andBuiltin,
+		"eq":  eqBuiltin,
+		"mi":  miBuiltin,
 		"not": notBuiltin,
+		"or":  orBuiltin,
+		"xor": xorBuiltin,
 	}
+}
+
+func andBuiltin(env environment, args ...value) (value, []error) {
+	if err := strictArityCheck("and", 2, args...); err != nil {
+		return value{}, []error{err}
+	}
+
+	if err := strictTypeCheck("and", 1, typeBoolean, args[0]); err != nil {
+		return value{}, []error{err}
+	}
+
+	if err := strictTypeCheck("and", 2, typeBoolean, args[1]); err != nil {
+		return value{}, []error{err}
+	}
+
+	return value{
+		boolean: &boolean{
+			args[0].boolean.internal && args[1].boolean.internal,
+		},
+	}, nil
+}
+
+func orBuiltin(env environment, args ...value) (value, []error) {
+	if err := strictArityCheck("or", 2, args...); err != nil {
+		return value{}, []error{err}
+	}
+
+	if err := strictTypeCheck("or", 1, typeBoolean, args[0]); err != nil {
+		return value{}, []error{err}
+	}
+
+	if err := strictTypeCheck("or", 2, typeBoolean, args[1]); err != nil {
+		return value{}, []error{err}
+	}
+
+	return value{
+		boolean: &boolean{
+			args[0].boolean.internal || args[1].boolean.internal,
+		},
+	}, nil
+}
+
+func miBuiltin(env environment, args ...value) (value, []error) {
+	if err := strictArityCheck("mi", 2, args...); err != nil {
+		return value{}, []error{err}
+	}
+
+	if err := strictTypeCheck("mi", 1, typeBoolean, args[0]); err != nil {
+		return value{}, []error{err}
+	}
+
+	if err := strictTypeCheck("mi", 2, typeBoolean, args[1]); err != nil {
+		return value{}, []error{err}
+	}
+
+	return value{
+		boolean: &boolean{
+			!args[0].boolean.internal || args[1].boolean.internal,
+		},
+	}, nil
+}
+
+func xorBuiltin(env environment, args ...value) (value, []error) {
+	if err := strictArityCheck("xor", 2, args...); err != nil {
+		return value{}, []error{err}
+	}
+
+	if err := strictTypeCheck("xor", 1, typeBoolean, args[0]); err != nil {
+		return value{}, []error{err}
+	}
+
+	if err := strictTypeCheck("xor", 2, typeBoolean, args[1]); err != nil {
+		return value{}, []error{err}
+	}
+
+	return value{
+		boolean: &boolean{
+			(args[0].boolean.internal || args[1].boolean.internal) &&
+				!(args[0].boolean.internal && args[1].boolean.internal),
+		},
+	}, nil
+}
+
+func eqBuiltin(env environment, args ...value) (value, []error) {
+	if err := strictArityCheck("eq", 2, args...); err != nil {
+		return value{}, []error{err}
+	}
+
+	if err := strictTypeCheck("eq", 1, typeBoolean, args[0]); err != nil {
+		return value{}, []error{err}
+	}
+
+	if err := strictTypeCheck("eq", 2, typeBoolean, args[1]); err != nil {
+		return value{}, []error{err}
+	}
+
+	return value{
+		boolean: &boolean{
+			args[0].boolean.internal == args[1].boolean.internal,
+		},
+	}, nil
 }
 
 func notBuiltin(env environment, args ...value) (value, []error) {
