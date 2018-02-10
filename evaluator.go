@@ -193,8 +193,15 @@ func (b expression) eval(env environment) (value, []error) {
 					b.identifier.lexeme)}
 			}
 
+			var seq value
+			var errs []error
 			val, set := env.getBinding(b.identifier.lexeme)
-			seq, errs := val.eval(env)
+
+			if b.identifier != val.identifier {
+				seq, errs = val.eval(env)
+			} else if env.parent != nil {
+				seq, errs = val.eval(*env.parent)
+			}
 
 			if len(errs) > 0 {
 				return value{}, errs
