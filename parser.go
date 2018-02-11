@@ -36,21 +36,23 @@ func parse(tokens []token) (evaluates, []error) {
 }
 
 func (p *parser) main() evaluates {
+	var ret evaluates
+
 	if p.match(gateTok) {
-		return p.gateDecl()
+		ret = p.gateDecl()
 	} else if p.match(bindContTok) || (p.curr().id == identTok && p.peek().id == bindTok) {
-		return p.binding()
+		ret = p.binding()
 	} else {
-		expr := p.expression()
-
-		if !p.done() {
-			p.errs = append(p.errs, fmt.Errorf(
-				"Unexpected word a position %d `%s`",
-				p.curr().pos, p.curr().lexeme))
-		}
-
-		return expr
+		ret = p.expression()
 	}
+
+	if !p.done() {
+		p.errs = append(p.errs, fmt.Errorf(
+			"Unexpected word a position %d `%s`",
+			p.curr().pos, p.curr().lexeme))
+	}
+
+	return ret
 }
 
 func (p *parser) binding() binding {
