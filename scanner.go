@@ -183,11 +183,16 @@ func scan(raw string) []token {
 	}
 
 	for ; i < max; i++ {
+		var n rune
 		r := runes[i]
+
+		if i+1 < max {
+			n = runes[i+1]
+		}
 
 		if isWhitespace(r) {
 			continue
-		} else if isOp(r) {
+		} else if isOp(r) && ((r == orAsciiRn && n == rune(' ')) || r != orAsciiRn) {
 			add(getOpToken(r), string(r), nil)
 		} else if r == oparenRn {
 			add(oparenTok, "(", nil)
@@ -310,13 +315,13 @@ func isDigit(r rune) bool {
 }
 
 func isIdentLike(r rune) bool {
-	return r != commaRn &&
+	return r == orAsciiRn || (r != commaRn &&
 		r != oparenRn &&
 		r != cparenRn &&
 		r != obrakRn &&
 		r != cbrakRn &&
 		!isWhitespace(r) &&
-		!isOp(r)
+		!isOp(r))
 }
 
 func not(f tokenFn) tokenFn {
