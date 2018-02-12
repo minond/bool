@@ -134,9 +134,6 @@ gate-decl-args = identifier { "," identifier } ;
 gate-call      = identifier "(" [ gate-call-args ] ")" ;
 gate-call-args = expression { "," expression } ;
 
-seq-decl       = "[" [ expression { "," expression } ] "]" ;
-seq-grab       = ( seq-decl | identifier | gate-call ) "[" DIGIT "]" ;
-
 binding        = [ "where" | "and" ] identifier "is" expression ;
 expression     = unary { BIN_OPERATOR unary } ;
 unary          = [ UNI_OPERATOR ] unary
@@ -146,8 +143,6 @@ primary        = BOOLEAN
                | identifier
                | number
                | gate-call
-               | seq-decl
-               | seq-grab
                | "(" expression ")"
                | "[" [ expression { "," expression } ] "]" ;
 
