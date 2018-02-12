@@ -13,12 +13,14 @@ const (
 	// For > .mode MODE
 	scanMode  = "scan"
 	parseMode = "parse"
+	printMode = "print"
 	evalMode  = "eval"
 
 	// For > MODE: expression
 	scanLine  = "scan:"
 	parseLine = "parse:"
 	evalLine  = "eval:"
+	printLine = "print:"
 
 	setMode = ".mode "
 
@@ -52,15 +54,15 @@ func main() {
 			return
 
 		case cmdMode:
-			fmt.Printf("< %s mode\n", mode)
+			fmt.Printf("< %s mode\n\n", mode)
 
 		case cmdReset:
-			fmt.Println("< clearing environment\n")
+			fmt.Println("< clearing environment\n\n")
 			env = newEnvironment(nil)
 
 		case cmdHelp:
 			fmt.Printf("< %s: reset current environment.\n", cmdReset)
-			fmt.Printf("< %s: display or change evaluation mode to %s, %s, or %s.\n", cmdMode, scanMode, parseMode, evalMode)
+			fmt.Printf("< %s: display or change evaluation mode to %s, %s, %s, or %s.\n", cmdMode, scanMode, parseMode, printMode, evalMode)
 			fmt.Printf("< %s: print a keyboard with valid operations and their ascii representation.\n", cmdKeyboard)
 			fmt.Printf("< %s: toggle paste mode.\n", cmdPaste)
 			fmt.Printf("< %s: view this help text.\n", cmdHelp)
@@ -97,20 +99,37 @@ func main() {
 					mode = parseMode
 				case evalMode:
 					mode = evalMode
+				case printMode:
+					mode = printMode
 				default:
 					fmt.Printf("< error: Invalid mode `%s`\n\n", maybeMode)
 					continue
 				}
 
-				fmt.Printf("< switching to %s mode\n", mode)
+				fmt.Printf("< switching to %s mode\n\n", mode)
 			} else if strings.HasPrefix(text, ".") {
 				fmt.Printf("< error: Unknown command: `%s`. Enter `.help` for help.\n\n", text)
 			} else if mode == scanMode || strings.HasPrefix(text, scanLine) {
 				for _, t := range scan(strings.TrimPrefix(text, scanLine)) {
 					fmt.Printf("< %04d %s\n", t.pos, t)
 				}
+
+				fmt.Println()
+			} else if mode == printMode || strings.HasPrefix(text, printLine) {
+				thing := strings.TrimSpace(strings.TrimPrefix(text, printLine))
+
+				if e, ok := env.getBinding(thing); ok {
+					spew.Dump(e)
+					fmt.Println()
+				} else if e, ok := env.getGate(thing); ok {
+					spew.Dump(e)
+					fmt.Println()
+				} else {
+					fmt.Printf("< Error, cannot find `%s` in current environment.\n\n", thing)
+				}
 			} else if mode == parseMode || strings.HasPrefix(text, parseLine) {
 				spew.Dump(parse(scan(strings.TrimPrefix(text, parseLine))))
+				fmt.Println()
 			} else if mode == evalMode || strings.HasPrefix(text, evalLine) {
 				// FIXME This is really ugly. This to clean up:
 				//
