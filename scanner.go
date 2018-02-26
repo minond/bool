@@ -42,7 +42,6 @@ const (
 	cparenRn   = rune(')')
 	eqAsciiRn  = rune('=')
 	eqRn       = rune('≡')
-	miAsciiRn  = rune('>')
 	miRn       = rune('→')
 	nlRn       = rune('\n')
 	notAsciiRn = rune('!')
@@ -65,7 +64,6 @@ var (
 		andRn:      andTok,
 		eqAsciiRn:  eqTok,
 		eqRn:       eqTok,
-		miAsciiRn:  miTok,
 		miRn:       miTok,
 		notAsciiRn: notTok,
 		notRn:      notTok,

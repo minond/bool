@@ -75,7 +75,7 @@ func main() {
 			fmt.Printf("< negation: %s or %s\n", string(notRn), string(notAsciiRn))
 			fmt.Printf("< exclusive or: %s or %s\n", string(xorRn), string(xorAsciiRn))
 			fmt.Printf("< equivalence: %s or %s\n", string(eqRn), string(eqAsciiRn))
-			fmt.Printf("< material implication: %s or %s\n", string(miRn), string(miAsciiRn))
+			fmt.Printf("< material implication: %s\n", string(miRn))
 			fmt.Println()
 
 		case cmdPaste:
