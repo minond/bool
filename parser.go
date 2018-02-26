@@ -136,7 +136,7 @@ func (p *parser) gateDecl() *gate {
 func (p *parser) expression() expression {
 	expr := p.unary()
 
-	for p.match(andTok, orTok, miTok, xorTok, eqTok) {
+	for p.match(andTok, orTok, miTok, xorTok, eqTok, geTok, gtTok, leTok, ltTok) {
 		lhs := expr
 		op := cloneToken(p.prev())
 		rhs := p.unary()

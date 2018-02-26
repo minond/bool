@@ -24,8 +24,12 @@ const (
 	errTok      tokenId = "err"
 	falseTok    tokenId = "false"
 	gateTok     tokenId = "gate"
+	geTok       tokenId = "ge"
+	gtTok       tokenId = "gt"
 	identTok    tokenId = "id"
 	invldTok    tokenId = "invalid"
+	leTok       tokenId = "le"
+	ltTok       tokenId = "lt"
 	miTok       tokenId = "matimp"
 	notTok      tokenId = "not"
 	numTok      tokenId = "num"
@@ -42,6 +46,10 @@ const (
 	cparenRn   = rune(')')
 	eqAsciiRn  = rune('=')
 	eqRn       = rune('≡')
+	geRn       = rune('≥')
+	gtRn       = rune('>')
+	leRn       = rune('≤')
+	ltRn       = rune('<')
 	miRn       = rune('→')
 	nlRn       = rune('\n')
 	notAsciiRn = rune('!')
@@ -64,6 +72,10 @@ var (
 		andRn:      andTok,
 		eqAsciiRn:  eqTok,
 		eqRn:       eqTok,
+		geRn:       geTok,
+		gtRn:       gtTok,
+		leRn:       leTok,
+		ltRn:       ltTok,
 		miRn:       miTok,
 		notAsciiRn: notTok,
 		notRn:      notTok,
@@ -111,6 +123,18 @@ func (t token) String() string {
 
 	case eqTok:
 		str = "EQ"
+
+	case gtTok:
+		str = "GT"
+
+	case geTok:
+		str = "GE"
+
+	case ltTok:
+		str = "LT"
+
+	case leTok:
+		str = "LE"
 
 	case orTok:
 		str = "OR"

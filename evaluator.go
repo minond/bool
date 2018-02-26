@@ -125,7 +125,7 @@ func (b expression) eval(env environment) (value, []error) {
 		switch b.op.id {
 		case andTok:
 			if fn, ok := env.getMethod("and"); !ok {
-				return value{}, []error{fmt.Errorf("Unknown unary operator: %s",
+				return value{}, []error{fmt.Errorf("Unknown binary operator: %s",
 					b.op.lexeme)}
 			} else {
 				return fn(env, lhs, rhs)
@@ -133,7 +133,7 @@ func (b expression) eval(env environment) (value, []error) {
 
 		case orTok:
 			if fn, ok := env.getMethod("or"); !ok {
-				return value{}, []error{fmt.Errorf("Unknown unary operator: %s",
+				return value{}, []error{fmt.Errorf("Unknown binary operator: %s",
 					b.op.lexeme)}
 			} else {
 				return fn(env, lhs, rhs)
@@ -141,7 +141,7 @@ func (b expression) eval(env environment) (value, []error) {
 
 		case miTok:
 			if fn, ok := env.getMethod("mi"); !ok {
-				return value{}, []error{fmt.Errorf("Unknown unary operator: %s",
+				return value{}, []error{fmt.Errorf("Unknown binary operator: %s",
 					b.op.lexeme)}
 			} else {
 				return fn(env, lhs, rhs)
@@ -149,7 +149,7 @@ func (b expression) eval(env environment) (value, []error) {
 
 		case xorTok:
 			if fn, ok := env.getMethod("xor"); !ok {
-				return value{}, []error{fmt.Errorf("Unknown unary operator: %s",
+				return value{}, []error{fmt.Errorf("Unknown binary operator: %s",
 					b.op.lexeme)}
 			} else {
 				return fn(env, lhs, rhs)
@@ -157,14 +157,46 @@ func (b expression) eval(env environment) (value, []error) {
 
 		case eqTok:
 			if fn, ok := env.getMethod("eq"); !ok {
-				return value{}, []error{fmt.Errorf("Unknown unary operator: %s",
+				return value{}, []error{fmt.Errorf("Unknown binary operator: %s",
+					b.op.lexeme)}
+			} else {
+				return fn(env, lhs, rhs)
+			}
+
+		case geTok:
+			if fn, ok := env.getMethod("ge"); !ok {
+				return value{}, []error{fmt.Errorf("Unknown binary operator: %s",
+					b.op.lexeme)}
+			} else {
+				return fn(env, lhs, rhs)
+			}
+
+		case gtTok:
+			if fn, ok := env.getMethod("gt"); !ok {
+				return value{}, []error{fmt.Errorf("Unknown binary operator: %s",
+					b.op.lexeme)}
+			} else {
+				return fn(env, lhs, rhs)
+			}
+
+		case leTok:
+			if fn, ok := env.getMethod("le"); !ok {
+				return value{}, []error{fmt.Errorf("Unknown binary operator: %s",
+					b.op.lexeme)}
+			} else {
+				return fn(env, lhs, rhs)
+			}
+
+		case ltTok:
+			if fn, ok := env.getMethod("lt"); !ok {
+				return value{}, []error{fmt.Errorf("Unknown binary operator: %s",
 					b.op.lexeme)}
 			} else {
 				return fn(env, lhs, rhs)
 			}
 
 		default:
-			return value{}, []error{fmt.Errorf("Unknown unary operator: %s",
+			return value{}, []error{fmt.Errorf("Unknown binary operator: %s",
 				b.op.lexeme)}
 		}
 	} else if b.op != nil && b.rhs != nil {
@@ -483,6 +515,10 @@ func getBuiltins() map[string]method {
 	return map[string]method{
 		"and": andBuiltin,
 		"eq":  eqBuiltin,
+		"ge":  geBuiltin,
+		"gt":  gtBuiltin,
+		"le":  leBuiltin,
+		"lt":  ltBuiltin,
 		"mi":  miBuiltin,
 		"not": notBuiltin,
 		"or":  orBuiltin,
@@ -495,11 +531,11 @@ func andBuiltin(env environment, args ...value) (value, []error) {
 		return value{}, []error{err}
 	}
 
-	if err := strictTypeCheck("and", 1, typeBoolean, args[0]); err != nil {
+	if err := strictTypeCheck("and", 1, args[0], typeBoolean); err != nil {
 		return value{}, []error{err}
 	}
 
-	if err := strictTypeCheck("and", 2, typeBoolean, args[1]); err != nil {
+	if err := strictTypeCheck("and", 2, args[1], typeBoolean); err != nil {
 		return value{}, []error{err}
 	}
 
@@ -515,11 +551,11 @@ func orBuiltin(env environment, args ...value) (value, []error) {
 		return value{}, []error{err}
 	}
 
-	if err := strictTypeCheck("or", 1, typeBoolean, args[0]); err != nil {
+	if err := strictTypeCheck("or", 1, args[0], typeBoolean); err != nil {
 		return value{}, []error{err}
 	}
 
-	if err := strictTypeCheck("or", 2, typeBoolean, args[1]); err != nil {
+	if err := strictTypeCheck("or", 2, args[1], typeBoolean); err != nil {
 		return value{}, []error{err}
 	}
 
@@ -535,11 +571,11 @@ func miBuiltin(env environment, args ...value) (value, []error) {
 		return value{}, []error{err}
 	}
 
-	if err := strictTypeCheck("mi", 1, typeBoolean, args[0]); err != nil {
+	if err := strictTypeCheck("mi", 1, args[0], typeBoolean); err != nil {
 		return value{}, []error{err}
 	}
 
-	if err := strictTypeCheck("mi", 2, typeBoolean, args[1]); err != nil {
+	if err := strictTypeCheck("mi", 2, args[1], typeBoolean); err != nil {
 		return value{}, []error{err}
 	}
 
@@ -555,11 +591,11 @@ func xorBuiltin(env environment, args ...value) (value, []error) {
 		return value{}, []error{err}
 	}
 
-	if err := strictTypeCheck("xor", 1, typeBoolean, args[0]); err != nil {
+	if err := strictTypeCheck("xor", 1, args[0], typeBoolean); err != nil {
 		return value{}, []error{err}
 	}
 
-	if err := strictTypeCheck("xor", 2, typeBoolean, args[1]); err != nil {
+	if err := strictTypeCheck("xor", 2, args[1], typeBoolean); err != nil {
 		return value{}, []error{err}
 	}
 
@@ -576,11 +612,11 @@ func eqBuiltin(env environment, args ...value) (value, []error) {
 		return value{}, []error{err}
 	}
 
-	if err := strictTypeCheck("eq", 1, typeBoolean, args[0]); err != nil {
+	if err := strictTypeCheck("eq", 1, args[0], typeBoolean); err != nil {
 		return value{}, []error{err}
 	}
 
-	if err := strictTypeCheck("eq", 2, typeBoolean, args[1]); err != nil {
+	if err := strictTypeCheck("eq", 2, args[1], typeBoolean); err != nil {
 		return value{}, []error{err}
 	}
 
@@ -591,12 +627,92 @@ func eqBuiltin(env environment, args ...value) (value, []error) {
 	}, nil
 }
 
+func geBuiltin(env environment, args ...value) (value, []error) {
+	if err := strictArityCheck("ge", 2, args...); err != nil {
+		return value{}, []error{err}
+	}
+
+	if err := strictOneOfTypeCheck("ge", 1, args[0], typeBoolean, typeNumber); err != nil {
+		return value{}, []error{err}
+	}
+
+	if err := strictOneOfTypeCheck("ge", 2, args[1], typeBoolean, typeNumber); err != nil {
+		return value{}, []error{err}
+	}
+
+	return value{
+		boolean: &boolean{
+			numberCast(args[0]).number >= numberCast(args[1]).number,
+		},
+	}, nil
+}
+
+func gtBuiltin(env environment, args ...value) (value, []error) {
+	if err := strictArityCheck("gt", 2, args...); err != nil {
+		return value{}, []error{err}
+	}
+
+	if err := strictOneOfTypeCheck("gt", 1, args[0], typeBoolean, typeNumber); err != nil {
+		return value{}, []error{err}
+	}
+
+	if err := strictOneOfTypeCheck("gt", 2, args[1], typeBoolean, typeNumber); err != nil {
+		return value{}, []error{err}
+	}
+
+	return value{
+		boolean: &boolean{
+			numberCast(args[0]).number > numberCast(args[1]).number,
+		},
+	}, nil
+}
+
+func leBuiltin(env environment, args ...value) (value, []error) {
+	if err := strictArityCheck("le", 2, args...); err != nil {
+		return value{}, []error{err}
+	}
+
+	if err := strictOneOfTypeCheck("le", 1, args[0], typeBoolean, typeNumber); err != nil {
+		return value{}, []error{err}
+	}
+
+	if err := strictOneOfTypeCheck("le", 2, args[1], typeBoolean, typeNumber); err != nil {
+		return value{}, []error{err}
+	}
+
+	return value{
+		boolean: &boolean{
+			numberCast(args[0]).number <= numberCast(args[1]).number,
+		},
+	}, nil
+}
+
+func ltBuiltin(env environment, args ...value) (value, []error) {
+	if err := strictArityCheck("lt", 2, args...); err != nil {
+		return value{}, []error{err}
+	}
+
+	if err := strictOneOfTypeCheck("lt", 1, args[0], typeBoolean, typeNumber); err != nil {
+		return value{}, []error{err}
+	}
+
+	if err := strictOneOfTypeCheck("lt", 2, args[1], typeBoolean, typeNumber); err != nil {
+		return value{}, []error{err}
+	}
+
+	return value{
+		boolean: &boolean{
+			numberCast(args[0]).number < numberCast(args[1]).number,
+		},
+	}, nil
+}
+
 func notBuiltin(env environment, args ...value) (value, []error) {
 	if err := strictArityCheck("not", 1, args...); err != nil {
 		return value{}, []error{err}
 	}
 
-	if err := strictTypeCheck("not", 1, typeBoolean, args[0]); err != nil {
+	if err := strictTypeCheck("not", 1, args[0], typeBoolean); err != nil {
 		return value{}, []error{err}
 	}
 
@@ -612,7 +728,7 @@ func strictArityCheck(label string, expected int, args ...value) error {
 	return nil
 }
 
-func strictTypeCheck(label string, pos int, expId typeId, got value) error {
+func strictTypeCheck(label string, pos int, got value, expId typeId) error {
 	gotId := got.getTypeId()
 
 	if expId != gotId {
@@ -621,4 +737,34 @@ func strictTypeCheck(label string, pos int, expId typeId, got value) error {
 	}
 
 	return nil
+}
+
+func strictOneOfTypeCheck(label string, pos int, got value, expIds ...typeId) error {
+	gotId := got.getTypeId()
+
+	for _, t := range expIds {
+		if t == gotId {
+			return nil
+		}
+	}
+
+	return fmt.Errorf("Type error, `%s` expects one of %v in position %d but got `%s` instead.",
+		label, expIds, pos, gotId)
+}
+
+// Converts booleans into number and keeps everything else the same.
+func numberCast(v value) value {
+	if v.getTypeId() == typeBoolean {
+		num := 0
+
+		if v.boolean.internal {
+			num = 1
+		}
+
+		return value{
+			number: num,
+		}
+	}
+
+	return v
 }

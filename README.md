@@ -149,7 +149,7 @@ primary        = BOOLEAN
 number         = { DIGIT } ;
 identifier     = LETTER , { LETTER | DIGIT | "_" } ;
 
-BIN_OPERATOR   = "^" | "∧" | "=" | "≡" | ">" | "→" | "v" | "∨" | "*" | "⊕" ;
+BIN_OPERATOR   = "^" | "∧" | "=" | "≡" | ">" | "≥" | "<" | "≤" | "→" | "v" | "∨" | "*" | "⊕" ;
 UNI_OPERATOR   = "¬" | "!" | "not" ;
 LETTER         = "a" | .. | "z" ;
 DIGIT          = "0" | .. | "9" ;
