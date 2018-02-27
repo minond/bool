@@ -511,6 +511,47 @@ func (v value) getTypeId() typeId {
 	}
 }
 
+func (v value) equals(other value, env environment) bool {
+	if v.getTypeId() != other.getTypeId() {
+		return false
+	}
+
+	switch {
+	case v.isBoolean():
+		return v.boolean.internal == other.boolean.internal
+
+	case v.isNumber():
+		return v.number == other.number
+
+	case v.isSequence():
+		if len(v.sequence.internal) != len(other.sequence.internal) {
+			return false
+		}
+
+		for i, _ := range v.sequence.internal {
+			e1, err := v.sequence.internal[i].eval(env)
+
+			if err != nil {
+				return false
+			}
+
+			e2, err := other.sequence.internal[i].eval(env)
+
+			if err != nil {
+				return false
+			}
+
+			if e1.equals(e2, env) == false {
+				return false
+			}
+		}
+
+		return true
+	}
+
+	return false
+}
+
 func getBuiltins() map[string]method {
 	return map[string]method{
 		"and": andBuiltin,
@@ -612,17 +653,14 @@ func eqBuiltin(env environment, args ...value) (value, []error) {
 		return value{}, []error{err}
 	}
 
-	if err := strictTypeCheck("eq", 1, args[0], typeBoolean); err != nil {
-		return value{}, []error{err}
-	}
-
-	if err := strictTypeCheck("eq", 2, args[1], typeBoolean); err != nil {
-		return value{}, []error{err}
+	if args[0].getTypeId() != args[1].getTypeId() {
+		return value{}, []error{fmt.Errorf("Type error, `eq` expects both arguments to be of the same type but got `%s` and `%s` instead.",
+			args[0].getTypeId(), args[1].getTypeId())}
 	}
 
 	return value{
 		boolean: &boolean{
-			args[0].boolean.internal == args[1].boolean.internal,
+			args[0].equals(args[1], env),
 		},
 	}, nil
 }
